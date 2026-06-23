@@ -3,7 +3,7 @@ import streamlit as st
 st.set_page_config(page_title="문제정의 및 데이터 수집", layout="wide")
 
 st.title("🎰 1. 문제 정의 및 데이터 수집 (기획/AI 설계)")
-st.markdown("본 페이지는 청소년 도박 중독 예방을 위한 프로젝트 목적, 캐글 데이터셋 구조, 그리고 AI 모델 선정 논리를 정의하는 공간입니다.")
+st.markdown("청소년 도박 중독 예방을 위한 프로젝트 목적, 캐글 데이터셋 구조, 그리고 AI 모델 선정 논리를 정의하는 공간입니다.")
 
 st.divider()
 

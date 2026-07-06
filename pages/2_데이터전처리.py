@@ -1,103 +1,55 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
+# --- 4. 📝 전처리 세부 조치 내역 (어떤 부분이 잘못되어 어떻게 고쳤는가) ---
+st.markdown("---")
+st.subheader("📝 전처리 세부 조치 리포트")
+st.markdown("데이터 수집 과정에서 발생한 결함과 이를 해결한 구체적인 전처리 내역입니다.")
 
-st.set_page_config(page_title="청소년 도박 데이터 전처리", layout="wide")
+# 3가지 주요 문제점을 카드 형태로 배치
+bad_col, arrow_col, good_col = st.columns([1.2, 0.2, 1.2])
 
-st.title("2. 데이터 전처리 (청소년 도박 데이터)")
-st.markdown("""
-청소년 도박 실태조사 및 상담 데이터의 신뢰성을 높이기 위한 전처리 페이지입니다.  
-결측치 처리, 불성실 응답(이상치) 제거, 도박 위험군 분류를 위한 인코딩 및 스케일링을 수행합니다.
-""")
-
-# --- 1. 가상의 청소년 도박 데이터 생성 (예시용) ---
-@st.cache_data
-def load_data():
-    # 전처리 전 데이터 (결측치와 말도 안 되는 이상치 포함)
-    raw_data = pd.DataFrame({
-        "학생ID": [1, 2, 3, 4, 5, 6, 6], # 6번 중복
-        "학년": ["중2", "고1", None, "고3", "중3", "고2", "고2"], # 결측치 포함
-        "월평균_용돈": [50000, 100000, 30000, 80000, 50000, 60000, 60000],
-        "월_도박_지출": [5000, 20000, 0, 99999999, 15000, 4000, 4000] # 4번 학생 용돈 대비 과도한 이상치(장난)
-    })
+with bad_col:
+    st.markdown("#### ❌ 발견된 데이터 결함 (Before)")
     
-    # 전처리 후 데이터 (중복 제거, 결측치 대체, 이상치 제거)
-    clean_data = raw_data.drop_duplicates().copy()
-    clean_data["학년"] = clean_data["학년"].fillna("미기재")
-    clean_data = clean_data[clean_data["월_도박_지출"] < 1000000] # 100만 원 이상 장난 응답 제거
+    st.error("""
+    **1. 불성실 응답 (이상치 발견)**
+    - **문제점:** 4번 학생의 `월_도박_지출`이 **99,999,999원**으로 기록됨.
+    - **이유:** 청소년 설문조사 특성상 장난으로 과장되게 적은 답변(불성실 응답)으로 판단됨. 이로 인해 전체 평균치가 심각하게 왜곡됨.
+    """)
     
-    return raw_data, clean_data
-
-raw_df, clean_df = load_data()
-
-
-# --- 2. 체크리스트 및 팁 구역 ---
-st.subheader("📋 청소년 데이터 맞춤 전처리 체크리스트")
-col1, col2 = st.columns([1, 1])
-
-with col1:
-    items = [
-        "결측치 확인 (무응답 '미기재' 처리)",
-        "중복 데이터 제거 (동일ID 중복 제출 필터링)",
-        "이상치 탐지 및 제거 (용돈 대비 터무니없는 도박 지출액)",
-        "범주형 변수 인코딩 및 스케일링 준비"
-    ]
-    for item in items:
-        st.checkbox(item, value=True) # 예시를 위해 기본 체크
-
-with col2:
-    st.info("""
-    💡 **청소년 데이터 전처리 핵심 포인트:**
-    - 청소년 설문조사 특성상 **용돈 범위를 벗어난 도박 금액(예: 9,999만 원)** 같은 불성실 응답(이상치)을 반드시 필터링해야 분석 결과가 왜곡되지 않습니다.
+    st.error("""
+    **2. 무응답 데이터 (결측치 발생)**
+    - **문제점:** 3번 학생의 `학년` 정보가 **None(공백)**으로 누락됨.
+    - **이유:** 도박 관련 민감한 문항에 답변하는 과정에서 인적 사항을 기피했거나 설문 시스템 오류로 추정됨.
+    """)
+    
+    st.error("""
+    **3. 중복 제출 데이터 (중복값 존재)**
+    - **문제점:** 6번과 7번 데이터의 학생ID, 학년, 용돈, 지출액이 **100% 일치**.
+    - **이유:** 설문 제출 버튼을 여러 번 클릭했거나, 시스템상 동일 인물의 데이터가 중복 수집됨.
     """)
 
-st.markdown("---")
+with arrow_col:
+    # 가운데에 화살표 기호를 넣어 시각적 흐름 연결
+    st.markdown("<h2 style='text-align: center; margin-top: 50px; color: #94a3b8;'>➡️</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; margin-top: 130px; color: #94a3b8;'>➡️</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; margin-top: 130px; color: #94a3b8;'>➡️</h2>", unsafe_allow_html=True)
 
-
-# --- 3. ⭐️ 전처리 전/후 비교 섹션 ⭐️ ---
-st.subheader("📊 전처리 전 vs 후 데이터 비교")
-
-# 탭을 나누어 표와 요약 통계를 비교할 수 있도록 구성
-tab1, tab2 = st.tabs(["📄 데이터프레임 직접 비교", "📈 주요 통계치 변화"])
-
-with tab1:
-    st.markdown("##### 원본 데이터와 전처리(정제)가 완료된 데이터를 나란히 비교합니다.")
-    col_raw, col_clean = st.columns(2)
+with good_col:
+    st.markdown("#### ⭕ 조치 및 고친 내용 (After)")
     
-    with col_raw:
-        st.error(f"❌ 전처리 전 원본 데이터 (총 {len(raw_df)}건)")
-        st.dataframe(raw_df, use_container_width=True)
-        st.caption("⚠️ 빨간색 강조: 3번 학년 결측치(None), 4번 도박 지출 이상치, 6-7번 중복 데이터")
-        
-    with col_clean:
-        st.success(f"⭕ 전처리 후 정제된 데이터 (총 {len(clean_df)}건)")
-        st.dataframe(clean_df, use_container_width=True)
-        st.caption("✨ 조치사항: 중복 제거 완료, 결측치 '미기재' 대체 완료, 불성실 이상치 제거 완료")
-
-with tab2:
-    st.markdown("##### 전처리를 통해 왜곡되었던 데이터의 평균과 통계가 어떻게 정상화되었는지 확인합니다.")
-    col_stat1, col_stat2 = st.columns(2)
+    st.success("""
+    **1. 임계치(Threshold) 기준 이상치 제거**
+    - **해결책:** 청소년 평균 용돈 범위를 고려하여 `월_도박_지출`이 **100만 원 이상인 데이터는 삭제** 조치함.
+    - **결과:** 평균 도박 지출액이 정상 범위로 복구되어 분석의 신뢰도 확보.
+    """)
     
-    with col_stat1:
-        st.metric(
-            label="원본 데이터 월평균 도박 지출액", 
-            value=f"{int(raw_df['월_도박_지출'].mean()):,}원",
-            delta="장난 데이터로 인해 평균이 극도로 왜곡됨",
-            delta_color="inverse"
-        )
-        
-    with col_stat2:
-        st.metric(
-            label="정제 후 월평균 도박 지출액", 
-            value=f"{int(clean_df['월_도박_지출'].mean()):,}원",
-            delta=f"현실적인 수치로 조정됨 (감소폭: {int(raw_df['월_도박_지출'].mean() - clean_df['월_to_박_지출'].mean()):,}원)",
-            delta_color="normal"
-        )
-        
-    # 간단한 가로 막대 그래프로 데이터 건수 변화 시각화
-    st.markdown("##### 데이터 건수 변화 시각화")
-    count_df = pd.DataFrame({
-        "상태": ["전처리 전", "전처리 후"],
-        "데이터 건수": [len(raw_df), len(clean_df)]
-    })
-    st.bar_chart(data=count_df, x="상태", y="데이터 건수", color="#3b82f6", use_container_width=True)
+    st.success("""
+    **2. 결측치 문자열 대체**
+    - **해결책:** 해당 행을 무작정 지우면 다른 유의미한 데이터(용돈 등)까지 손실되므로, 학년을 **'미기재'라는 새로운 범주로 대체**함.
+    - **결과:** 데이터 손실을 최소화하고 학년 미기재 그룹의 도박 성향도 추적 가능해짐.
+    """)
+    
+    st.success("""
+    **3. 중복 행(Row) 제거**
+    - **해결책:** `drop_duplicates()` 함수를 사용하여 완벽히 일치하는 **중복 데이터 1건을 삭제**하고 고유한 1건만 남김.
+    - **결과:** 통계치 계산 시 데이터가 부풀려지는 현상(과적합 위험)을 방지함.
+    """)

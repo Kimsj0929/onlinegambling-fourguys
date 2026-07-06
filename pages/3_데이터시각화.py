@@ -18,9 +18,13 @@ html, body, [data-testid="stMarkdownContainer"] {
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# Matplotlib/Seaborn 테마 스타일 및 한글 설정
+# ==================== [핵심 수정] 폰트 깨짐 방지 설정 ====================
 plt.style.use('dark_background')
-plt.rcParams['font.family'] = 'NanumGothic' or 'Malgun Gothic' or 'sans-serif'
+
+# 시스템에 한글 폰트가 없을 때를 대비하여 전역 기본 고딕(sans-serif) 스타일을 강제 적용하고,
+# 한글을 그릴 수 있는 폰트 서브셋을 Matplotlib 전역 엔진에 주입합니다.
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial', 'Helvetica', 'Liberation Sans', 'DejaVu Sans Unicode']
 plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['text.color'] = '#8A99AD'
 plt.rcParams['axes.labelcolor'] = '#8A99AD'
@@ -107,8 +111,8 @@ h_col1, h_col2 = st.columns(2)
 corr_raw = df_raw[features].corr()
 corr_clean = df_clean[features].corr()
 
-# 축 눈금에 들어갈 명확한 한글 라벨 배열
-ko_labels = ['참여 유저수', '보유 스킨수', '베팅 금액', '진행 시간', '최종 환급금']
+# 서버 환경에서도 100% 안전하게 출력 가능한 영문 베이스 + 국문 융합 라벨링 적용
+ko_labels = ['Gamers (유저수)', 'Skins (스킨수)', 'Money (베팅금)', 'Ticks (시간)', 'Outpay (환급금)']
 
 with h_col1:
     st.markdown("##### [원본] 노이즈가 섞인 변수별 연관성")
@@ -139,13 +143,11 @@ with b_col1:
     fig_b1.patch.set_facecolor('#0E1117')
     ax_b1.set_facecolor('#111625')
     
-    # 박스플롯 생성
     sns.boxplot(data=df_raw[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b1)
     
-    # 가장 안전한 전역 함수 기반 한글 라벨 주입 방식 채택
     plt.sca(ax_b1)
-    plt.xticks([0, 1], ['베팅 금액 (원)', '환급 금액 (원)'])
-    plt.ylabel("데이터 수치 범위")
+    plt.xticks([0, 1], ['Money (베팅금액)', 'Outpay (환급금액)'])
+    plt.ylabel("Value Range (수치 범위)")
     ax_b1.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     st.pyplot(fig_b1)
 
@@ -158,8 +160,8 @@ with b_col2:
     sns.boxplot(data=df_clean[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b2)
     
     plt.sca(ax_b2)
-    plt.xticks([0, 1], ['베팅 금액 (원)', '환급 금액 (원)'])
-    plt.ylabel("데이터 수치 범위")
+    plt.xticks([0, 1], ['Money (베팅금액)', 'Outpay (환급금액)'])
+    plt.ylabel("Value Range (수치 범위)")
     ax_b2.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     st.pyplot(fig_b2)
 
@@ -175,13 +177,12 @@ with s_col1:
     fig_s.patch.set_facecolor('#0E1117')
     ax_s.set_facecolor('#111625')
     
-    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.3, label='이상치 판단 구역', s=35)
-    ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.8, label='정상 정제 구역', s=20)
+    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.3, label='Outliers (이상치 구역)', s=35)
+    ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.8, label='Cleaned (정상 구역)', s=20)
     
-    # 전역 전용 함수로 안전하게 한글 축 이름 명시
     plt.sca(ax_s)
-    plt.xlabel('유저별 베팅 금액 (단위: 원)')
-    plt.ylabel('게임 결과 환급 금액 (단위: 원)')
+    plt.xlabel('Money (베팅 금액)')
+    plt.ylabel('Outpay (환급 금액)')
     ax_s.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     ax_s.legend(facecolor='#111625', edgecolor='#232D42')
     st.pyplot(fig_s)
@@ -192,7 +193,7 @@ with s_col2:
     df_raw_bar = df_raw.copy()
     df_clean_bar = df_clean.copy()
     
-    group_labels = ['소액 베팅군', '중액 베팅군', '고액 베팅군']
+    group_labels = ['Low (소액)', 'Medium (중액)', 'High (고액)']
     df_raw_bar['group'] = pd.qcut(df_raw_bar['money'], q=3, labels=group_labels)
     
     try:
@@ -203,7 +204,7 @@ with s_col2:
     raw_mean = df_raw_bar.groupby('group', observed=False)['outpay'].mean()
     clean_mean = df_clean_bar.groupby('group', observed=False)['outpay'].mean()
     
-    bar_df = pd.DataFrame({'원본 데이터 평균': raw_mean, '실시간 정제 평균': clean_mean})
+    bar_df = pd.DataFrame({'Raw Mean': raw_mean, 'Clean Mean': clean_mean})
     
     fig_bar, ax_bar = plt.subplots(figsize=(6, 4.2))
     fig_bar.patch.set_facecolor('#0E1117')
@@ -211,10 +212,9 @@ with s_col2:
     
     bar_df.plot(kind='bar', color=['#4A5568', '#00E5FF'], ax=ax_bar, rot=0)
     
-    # 바 차트 전용 한글 명시
     plt.sca(ax_bar)
-    plt.xlabel('베팅 규모 그룹 분할')
-    plt.ylabel('지급된 평균 환급 금액 (원)')
+    plt.xlabel('Betting Groups (베팅 규모 그룹)')
+    plt.ylabel('Average Outpay (평균 환급금)')
     ax_bar.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     ax_bar.legend(facecolor='#111625', edgecolor='#232D42')
     st.pyplot(fig_bar)

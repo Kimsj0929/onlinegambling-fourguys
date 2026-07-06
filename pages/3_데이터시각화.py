@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import os
 
 # 1. 페이지 설정
 st.set_page_config(page_title="카지노 정제 데이터 분석 대시보드", layout="wide")
@@ -10,43 +9,33 @@ st.set_page_config(page_title="카지노 정제 데이터 분석 대시보드", 
 st.title("📊 카지노 데이터 분석 대시보드 (정제 완료 버전)")
 st.markdown("결측치와 이상치가 완벽하게 정제된 데이터셋을 기반으로 시각화 및 인사이트를 제공합니다.")
 
-# 2. [🔥 핵심 해결책] app.py 파일이 있는 진짜 폴더 위치를 파이썬이 스스로 강제 추적합니다.
-try:
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    current_dir = os.getcwd()
-
-# 실제 파일명을 절대 경로 형태로 결합하여 고정합니다.
-target_file_path = os.path.join(current_dir, "onlineCasino_cleaned_v2.csv")
-
-
-# 3. 데이터 로드 및 캐싱 (성능 최적화)
+# 2. [🔥 서버 배포 환경 전용 파일 로드 알고리즘]
+# 복잡한 os.path를 걷어내고, Streamlit 서버 시스템이 현재 열려있는 경로에서 직접 파일을 가져오게 합니다.
 @st.cache_data
 def load_clean_data():
-    # 엉뚱한 기준 폴더가 아니라 app.py 바로 옆 방에 있는 파일을 강제로 지정하여 읽습니다.
-    return pd.read_csv(target_file_path)
+    # 파일명만 깔끔하게 명시하여 시스템이 직접 찾도록 유도합니다.
+    return pd.read_csv("onlineCasino_cleaned_v2.csv")
 
 try:
     df = load_clean_data()
     file_loaded = True
-except FileNotFoundError:
+except Exception as e:
     file_loaded = False
+    error_message = str(e)
 
-# 만약 파일명이 물리적으로 달라서 아예 못 찾을 때만 보여주는 비상 화면
+# 만약 파일이 누락되어 찾지 못할 때만 작동하는 백업 로직
 if not file_loaded:
-    st.error("📂 시스템이 파일을 여전히 찾지 못했습니다.")
-    st.info(f"💡 현재 코드가 탐색한 정확한 파일 경로: `{target_file_path}`")
+    st.error("📂 [서버 에러] GitHub 저장소 내에서 데이터를 불러오지 못했습니다.")
     st.markdown("""
-    **🛠️ 마지막 최종 점검:**
-    1. 파일의 실제 이름이 대소문자나 띄어쓰기까지 정확하게 **`onlineCasino_cleaned_v2.csv`** 가 맞는지 확인해 주세요.
-    2. 위의 파란 박스 안에 적힌 **정확한 경로 폴더 안**으로 이 CSV 파일을 직접 수동으로 이동시켜 주시면 바로 작동합니다!
+    **🛠️ 깃허브(GitHub) 최종 확인 사항:**
+    이 메시지가 웹 화면에 지속적으로 나온다면, 현재 깃허브 저장소(Repository)의 **가장 바깥 폴더(Root)** 또는 `pages` 폴더 안에 **`onlineCasino_cleaned_v2.csv`** 파일이 실제로 업로드되어 누락되지 않았는지 꼭 확인해 주세요!
     """)
     st.stop()
 
 
 # ==================== 대시보드 본문 및 시각화 구현 ====================
 
-# 4. 사이드바 - 분석할 핵심 종속변수 마스터 스위치 배치
+# 3. 사이드바 - 분석할 핵심 종속변수 마스터 스위치 배치
 st.sidebar.header("🎯 핵심 종속변수 설정")
 target_var = st.sidebar.selectbox(
     "시각화 기준 종속변수 선택", 
@@ -58,7 +47,7 @@ st.sidebar.write("---")
 st.sidebar.markdown(f"### 📋 데이터 요약 정보\n- **전체 데이터 수:** {len(df):,} 행\n- **결측치 상태:** 0개 (완벽 정제 완료)")
 
 
-# 5. 레이아웃 구성을 위한 4개의 탭 생성
+# 4. 레이아웃 구성을 위한 4개의 탭 생성
 tab1, tab2, tab3, tab4 = st.tabs([
     "🔥 1. 변수 간 상관관계", 
     "✨ 2. 종속변수 간의 관계", 

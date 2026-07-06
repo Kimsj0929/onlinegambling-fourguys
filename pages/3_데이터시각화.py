@@ -53,7 +53,7 @@ st.markdown("데이터 필터 강도를 조정하여 실시간으로 변화하�
 st.markdown("---")
 
 # ==================== 실시간 컨트롤러 컨솔 ====================
-st.markdown("#### 🎛️ 실시간 데이터 필터링 강도 제 제어")
+st.markdown("#### 🎛️ 실시간 데이터 필터링 강도 제어")
 
 iqr_weight = st.slider(
     "이상치 데이터 차단 강도 (낮을수록 더 깐깐하게 비정상 데이터를 걸러냅니다)", 
@@ -99,7 +99,7 @@ st.markdown("---")
 numeric_features = ['gamers', 'skins', 'money', 'ticks', 'outpay']
 features = [c for c in numeric_features if c in df_raw.columns]
 
-# ==================== GRAPH 1. 상관관계 히트맵 (알기 쉬운 용어 가이드) ====================
+# ==================== GRAPH 1. 상관관계 히트맵 ====================
 st.markdown("#### 🌡️ 1. 데이터 항목 간의 수치적 연관성 지도 (서로 얼마나 닮아있는가)")
 st.write("수치가 1에 가까울수록 한쪽이 늘어날 때 다른 쪽도 똑같이 늘어나는 긴밀한 사이임을 뜻합니다.")
 h_col1, h_col2 = st.columns(2)
@@ -107,7 +107,7 @@ h_col1, h_col2 = st.columns(2)
 corr_raw = df_raw[features].corr()
 corr_clean = df_clean[features].corr()
 
-# 한글 축 및 축 항목 이름을 그래프 내부에 강제 지정하기 위한 리스트
+# 축 눈금에 들어갈 명확한 한글 라벨 배열
 ko_labels = ['참여 유저수', '보유 스킨수', '베팅 금액', '진행 시간', '최종 환급금']
 
 with h_col1:
@@ -128,7 +128,7 @@ with h_col2:
 
 st.markdown("---")
 
-# ==================== GRAPH 2. 분포 박스플롯 (한글 명시) ====================
+# ==================== GRAPH 2. 분포 박스플롯 ====================
 st.markdown("#### 📦 2. 주요 데이터 수치 범위 분포 (최소/최대 및 격리 구역)")
 b_col1, b_col2 = st.columns(2)
 box_features = ['money', 'outpay']
@@ -138,10 +138,13 @@ with b_col1:
     fig_b1, ax_b1 = plt.subplots(figsize=(6, 3.8))
     fig_b1.patch.set_facecolor('#0E1117')
     ax_b1.set_facecolor('#111625')
+    
+    # 박스플롯 생성
     sns.boxplot(data=df_raw[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b1)
     
-    # 안전하게 셋팅하는 명시적 한글 축 레이블링
-    ax_b1.set_xticklabels(['베팅 금액 (원)', '환급 금액 (원)'])
+    # 가장 안전한 전역 함수 기반 한글 라벨 주입 방식 채택
+    plt.sca(ax_b1)
+    plt.xticks([0, 1], ['베팅 금액 (원)', '환급 금액 (원)'])
     plt.ylabel("데이터 수치 범위")
     ax_b1.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     st.pyplot(fig_b1)
@@ -151,13 +154,67 @@ with b_col2:
     fig_b2, ax_b2 = plt.subplots(figsize=(6, 3.8))
     fig_b2.patch.set_facecolor('#0E1117')
     ax_b2.set_facecolor('#111625')
+    
     sns.boxplot(data=df_clean[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b2)
     
-    ax_b2.set_xticklabels(['베팅 금액 (원)', '환급 금액 (원)'])
+    plt.sca(ax_b2)
+    plt.xticks([0, 1], ['베팅 금액 (원)', '환급 금액 (원)'])
     plt.ylabel("데이터 수치 범위")
     ax_b2.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     st.pyplot(fig_b2)
 
 st.markdown("---")
 
-#
+# ==================== GRAPH 3. 산점도 및 바 차트 ====================
+st.markdown("#### 🎯 3. 데이터 분포 형태 및 베팅 규모별 평균 환급 구조")
+s_col1, s_col2 = st.columns(2)
+
+with s_col1:
+    st.markdown("##### 🔵 데이터 개별 위치 지도 (산점도)")
+    fig_s, ax_s = plt.subplots(figsize=(6, 4.2))
+    fig_s.patch.set_facecolor('#0E1117')
+    ax_s.set_facecolor('#111625')
+    
+    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.3, label='이상치 판단 구역', s=35)
+    ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.8, label='정상 정제 구역', s=20)
+    
+    # 전역 전용 함수로 안전하게 한글 축 이름 명시
+    plt.sca(ax_s)
+    plt.xlabel('유저별 베팅 금액 (단위: 원)')
+    plt.ylabel('게임 결과 환급 금액 (단위: 원)')
+    ax_s.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
+    ax_s.legend(facecolor='#111625', edgecolor='#232D42')
+    st.pyplot(fig_s)
+
+with s_col2:
+    st.markdown("##### 📊 베팅 등급별 평균 환급금 비교 (바 차트)")
+    
+    df_raw_bar = df_raw.copy()
+    df_clean_bar = df_clean.copy()
+    
+    group_labels = ['소액 베팅군', '중액 베팅군', '고액 베팅군']
+    df_raw_bar['group'] = pd.qcut(df_raw_bar['money'], q=3, labels=group_labels)
+    
+    try:
+        df_clean_bar['group'] = pd.qcut(df_clean_bar['money'], q=3, labels=group_labels)
+    except:
+        df_clean_bar['group'] = pd.cut(df_clean_bar['money'], bins=3, labels=group_labels)
+    
+    raw_mean = df_raw_bar.groupby('group', observed=False)['outpay'].mean()
+    clean_mean = df_clean_bar.groupby('group', observed=False)['outpay'].mean()
+    
+    bar_df = pd.DataFrame({'원본 데이터 평균': raw_mean, '실시간 정제 평균': clean_mean})
+    
+    fig_bar, ax_bar = plt.subplots(figsize=(6, 4.2))
+    fig_bar.patch.set_facecolor('#0E1117')
+    ax_bar.set_facecolor('#111625')
+    
+    bar_df.plot(kind='bar', color=['#4A5568', '#00E5FF'], ax=ax_bar, rot=0)
+    
+    # 바 차트 전용 한글 명시
+    plt.sca(ax_bar)
+    plt.xlabel('베팅 규모 그룹 분할')
+    plt.ylabel('지급된 평균 환급 금액 (원)')
+    ax_bar.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
+    ax_bar.legend(facecolor='#111625', edgecolor='#232D42')
+    st.pyplot(fig_bar)

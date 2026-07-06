@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import os
 
 # 1. 페이지 설정
 st.set_page_config(page_title="카지노 정제 데이터 분석 대시보드", layout="wide")
@@ -9,28 +10,49 @@ st.set_page_config(page_title="카지노 정제 데이터 분석 대시보드", 
 st.title("📊 카지노 데이터 분석 대시보드 (정제 완료 버전)")
 st.markdown("결측치와 이상치가 완벽하게 정제된 데이터셋을 기반으로 시각화 및 인사이트를 제공합니다.")
 
-# 2. [🔥 서버 배포 환경 전용 파일 로드 알고리즘]
-# 복잡한 os.path를 걷어내고, Streamlit 서버 시스템이 현재 열려있는 경로에서 직접 파일을 가져오게 합니다.
+# 2. [🔥 GitHub 최상위 루트 폴더 추적 알고리즘]
 @st.cache_data
 def load_clean_data():
-    # 파일명만 깔끔하게 명시하여 시스템이 직접 찾도록 유도합니다.
-    return pd.read_csv("onlineCasino_cleaned_v2.csv")
+    # 현재 코드가 pages/ 폴더 안에 있으므로, 한 단계 위로 올라가서(..) 최상위 루트의 파일을 찾습니다.
+    current_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else os.getcwd()
+    
+    # 후보 1: 상위 폴더(루트)에 있는 csv 파일 경로 계산
+    path_parent_root = os.path.abspath(os.path.join(current_dir, "..", "onlineCasino_cleaned_v2.csv"))
+    
+    # 후보 2: Streamlit Cloud 기본 루트 기준 상대 경로
+    path_pure_root = "onlineCasino_cleaned_v2.csv"
+    
+    # 후보 3: 현재 코드가 있는 pages/ 폴더 안 자체 (혹시 나중에 옮기실까봐 방어 코드로 추가)
+    path_side = os.path.join(current_dir, "onlineCasino_cleaned_v2.csv")
+    
+    # 존재하는 경로를 순서대로 탐색하여 로드
+    if os.path.exists(path_parent_root):
+        return pd.read_csv(path_parent_root)
+    elif os.path.exists(path_pure_root):
+        return pd.read_csv(path_pure_root)
+    elif os.path.exists(path_side):
+        return pd.read_csv(path_side)
+    else:
+        raise FileNotFoundError("GitHub 내 상위(루트) 폴더에서 파일을 찾지 못했습니다.")
 
 try:
     df = load_clean_data()
     file_loaded = True
-except Exception as e:
+except FileNotFoundError:
     file_loaded = False
-    error_message = str(e)
 
-# 만약 파일이 누락되어 찾지 못할 때만 작동하는 백업 로직
+# --- 만약 경로가 완전 뒤틀려 실패했을 때만 작동하는 비상 수동 화면 ---
 if not file_loaded:
-    st.error("📂 [서버 에러] GitHub 저장소 내에서 데이터를 불러오지 못했습니다.")
+    st.error("📂 [서버 파일 매칭 실패] GitHub 내에서 데이터를 찾을 수 없습니다.")
     st.markdown("""
-    **🛠️ 깃허브(GitHub) 최종 확인 사항:**
-    이 메시지가 웹 화면에 지속적으로 나온다면, 현재 깃허브 저장소(Repository)의 **가장 바깥 폴더(Root)** 또는 `pages` 폴더 안에 **`onlineCasino_cleaned_v2.csv`** 파일이 실제로 업로드되어 누락되지 않았는지 꼭 확인해 주세요!
+    **🛠️ 최종 조치 방법:**
+    서버 경로 추적이 차단된 상태입니다. 대시보드를 즉시 정상 작동시키려면 아래 칸에 파일을 한 번만 직접 마우스로 끌어다(Drag & Drop) 넣어주세요!
     """)
-    st.stop()
+    uploaded_file = st.file_uploader("📂 테스트용 onlineCasino_cleaned_v2.csv 직접 넣기", type=["csv"])
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+    else:
+        st.stop()
 
 
 # ==================== 대시보드 본문 및 시각화 구현 ====================

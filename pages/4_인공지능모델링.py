@@ -9,7 +9,7 @@ from sklearn.metrics import mean_squared_error, accuracy_score
 # 1. 글로벌 레이아웃 설정
 st.set_page_config(page_title="NEXUS 퀀텀 AI | 분석 대시보드", layout="wide")
 
-# CSS 주입
+# CSS 주입 (안정적인 커스텀 스타일)
 css_style = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
@@ -48,10 +48,17 @@ html, body, [data-testid="stMarkdownContainer"] {
     color: #00E5FF;
     font-family: 'JetBrains Mono', monospace;
 }
+.sub-value {
+    font-size: 1.1rem;
+    color: #FF2E93;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    margin-top: 0.2rem;
+}
 .metric-desc {
     font-size: 0.8rem;
     color: #A0AEC0;
-    margin-top: 0.3rem;
+    margin-top: 0.4rem;
 }
 </style>
 """
@@ -86,6 +93,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 lin_reg = LinearRegression().fit(X_train, y_train)
 log_reg = LogisticRegression().fit(X_train, y_train)
 
+# 모델 검증 스코어 사전 연산
+mse = mean_squared_error(y_test, lin_reg.predict(X_test))
+acc = accuracy_score(y_test, log_reg.predict(X_test))
+
 # ==================== 컨트롤러 (실시간 매개변수 입력) ====================
 st.markdown("### 🎛️ 하이퍼파라미터 실시간 제어 컨솔")
 min_x, max_x = float(X.min()), float(X.max())
@@ -101,36 +112,39 @@ res_log_class = 1 if res_log_prob >= 0.5 else 0
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ==================== 실시간 분석 메트릭 시각화 ====================
+# ==================== 실시간 분석 메트릭 시각화 (요청사항 반영 세션) ====================
 p_col1, p_col2 = st.columns(2)
 
 with p_col1:
     if res_lin < 0 or res_lin > 1:
-        desc_text = "<span style='color:#FF5252;'>⚠️ 확률 범위 초과 (0과 1 사이의 분류 경계가 붕괴됨)</span>"
+        desc_text = "<span style='color:#FF5252;'>⚠️ <b>범위 초과 오류</b>: 선형 모델의 한계로 인해 불가능한 스코어가 출력되었습니다.</span>"
     else:
-        desc_text = "✅ 수치적 타당성 범위 내에 존재"
+        desc_text = "✅ <b>수치 해석</b>: 단순 정비례 직선 수식으로만 계산된 연속형 위치 점수입니다."
         
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">선형 회귀 연속형 예측 출력값 (Linear Projection)</div>
+        <div class="metric-label">📉 선형 회귀 예측 출력값 & 모델 오차</div>
         <div class="metric-value">{res_lin:.4f}</div>
-        <div class="metric-desc">{desc_text}</div>
+        <div class="sub-value">📊 모델 전체 오차 (MSE): {mse:.4f}</div>
+        <div class="metric-desc">{desc_text}<br><span style='color:#6C7D93;'>* 연속적인 수치를 예측하므로 정확도 대신 오차 지표(MSE)를 사용하며, 0에 가까울수록 정밀합니다.</span></div>
     </div>
     """, unsafe_allow_html=True)
 
 with p_col2:
     if res_log_class == 1:
         status_color = "#00E676"
-        status_text = "최종 분류 상태: 환급 성공 예측 (1)"
+        status_text = "🎯 최종 판정: 환급 성공 예측 (1)"
     else:
         status_color = "#FF5252"
-        status_text = "최종 분류 상태: 환급 실패 예측 (0)"
+        status_text = "💀 최종 판정: 환급 실패 예측 (0)"
         
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">로지스틱 시그모이드 연산 확률 (Logistic Probability)</div>
+        <div class="metric-label">📈 로지스틱 연산 확률 & 분류 정확도</div>
         <div class="metric-value">{res_log_prob * 100:.2f}%</div>
-        <div class="metric-desc" style="color:{status_color}; font-weight:600;">{status_text} (분류 임계치 크리테리온: 0.5)</div>
+        <div class="sub-value" style="color:#00E5FF;">🎯 모델 최종 정확도 (Accuracy): {acc*100:.1f}%</div>
+        <div class="metric-desc" style="color:{status_color}; font-weight:600;">{status_text}</div>
+        <div class="metric-desc" style="margin-top:0px;"><span style='color:#6C7D93;'>* 성공/실패 맞춤 여부를 판정하므로 정확도(Accuracy)를 지표로 사용하며, 100%에 가까울수록 완벽합니다.</span></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -176,43 +190,4 @@ with col2:
     ax2.plot(X_range, log_curve, color='#00E5FF', linewidth=2.5, label='시그모이드 최적 곡선', zorder=3)
     ax2.axhline(0.5, color='#718096', linestyle='--', linewidth=1, alpha=0.6, label='분류 결정 임계선 (0.5)')
     
-    ax2.scatter(user_value, res_log_prob, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='실시간 입력 위치')
-    ax2.axvline(user_value, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
-    
-    ax2.set_ylim(-0.1, 1.1)
-    ax2.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-    ax2.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-    st.pyplot(fig2)
-
-# ==================== 요약 및 인공지능 성능 리포트 ====================
-st.markdown("<br>", unsafe_allow_html=True)
-st.markdown("### ⚖️ 모델 종합 성능 지표 및 효율성 리포트")
-
-# 수학적 종합 검증 행렬 연산
-mse = mean_squared_error(y_test, lin_reg.predict(X_test))
-acc = accuracy_score(y_test, log_reg.predict(X_test))
-
-# [🔍 지표명 업데이트] 어떤 수치가 무엇인지 명확하게 한글 머리글 추가
-summary_matrix = pd.DataFrame({
-    "평가 매트릭스 항목": ["최적화 목적 함수", "출력 데이터 위상", "이진 분류 분석 적합도", "성능 평가 지표 스코어"],
-    "모델 01: 선형 회귀 (Linear)": [
-        "연속 수치 오차 최소화",
-        "제한 없음 (-inf 부터 +inf)",
-        "부적합 (수학적 왜곡 발생)",
-        f"[오차 지표] 평균제곱오차(MSE): {mse:.4f}"
-    ],
-    "모델 02: 로지스틱 회귀 (Logistic)": [
-        "이진 범주 확률 우도 극대화",
-        "시그모이드 제한 공간 ([0.0, 1.0])",
-        "매우 최적 (명확한 확률 분류)",
-        f"[정확도 지표] 최종 정확도(Accuracy): {acc*100:.1f}%"
-    ]
-})
-
-st.table(summary_matrix.set_index("평가 매트릭스 항목"))
-
-# 인텔리전스 분석 요약 브리프
-st.markdown(f"""
-> **AI 분석 브리프:** > * **선형 회귀 모델**은 연속된 수치를 맞추는 모델이므로, 오차의 크기를 나타내는 **평균제곱오차(MSE: {mse:.4f})**를 평가지표로 사용합니다. 수치가 0에 가까울수록 좋습니다.
-> * **로지스틱 회귀 모델**은 이진 분류(0 또는 1)를 수행하는 모델이므로, 얼마나 정확히 맞췄는지를 나타내는 **최종 정확도(Accuracy: {acc*100:.1f}%)**를 평가지표로 사용합니다. 100%에 가까울수록 성능이 완벽함을 뜻합니다.
-""")
+    ax2.scatter(user_value, res_log_prob, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='

@@ -6,10 +6,10 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, accuracy_score
 
-# 1. 글로벌 레이아웃 설정 (전문 분석 플랫폼 스타일)
+# 1. 글로벌 레이아웃 설정
 st.set_page_config(page_title="NEXUS 퀀텀 AI | 분석 대시보드", layout="wide")
 
-# CSS 주입 (안정적인 커스텀 스타일)
+# CSS 주입 (파이썬 구문 분석 충돌 위험 요소를 모두 배제한 문자열)
 css_style = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
@@ -172,4 +172,51 @@ with col1:
 with col2:
     st.markdown("#### 📈 로지스틱 분류 확률 시그모이드 곡선")
     fig2, ax2 = plt.subplots(figsize=(7, 4.2))
-    fig2.patch.set_facecolor('#0E1
+    fig2.patch.set_facecolor('#0E1117')
+    ax2.set_facecolor('#111625')
+    
+    ax2.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='실제 검증 데이터(Empirical)', zorder=2)
+    ax2.plot(X_range, log_curve, color='#00E5FF', linewidth=2.5, label='시그모이드 최적 곡선', zorder=3)
+    ax2.axhline(0.5, color='#718096', linestyle='--', linewidth=1, alpha=0.6, label='분류 결정 임계선 (0.5)')
+    
+    # 실시간 다이내믹 포인터 락
+    ax2.scatter(user_value, res_log_prob, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='실시간 입력 위치')
+    ax2.axvline(user_value, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
+    
+    ax2.set_ylim(-0.1, 1.1)
+    ax2.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
+    ax2.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
+    st.pyplot(fig2)
+
+# ==================== 요약 및 인공지능 성능 리포트 ====================
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("### ⚖️ 모델 종합 성능 지표 및 효율성 리포트")
+
+# 수학적 종합 검증 행렬 연산
+mse = mean_squared_error(y_test, lin_reg.predict(X_test))
+acc = accuracy_score(y_test, log_reg.predict(X_test))
+
+# 고성능 매트릭스 테이블 데이터프레임 구성
+summary_matrix = pd.DataFrame({
+    "평가 매트릭스 항목": ["최적화 목적 함수", "출력 데이터 위상", "이진 분류 분석 적합도", "테스트 검증 스코어"],
+    "모델 01: 선형 회귀 (Linear)": [
+        "연속 수치 오차 최소화",
+        "제한 없음 (-inf 부터 +inf)",
+        "부적합 (수학적 왜곡 발생)",
+        f"평균제곱오차(MSE): {mse:.4f}"
+    ],
+    "모델 02: 로지스틱 회귀 (Logistic)": [
+        "이진 범주 확률 우도 극대화",
+        "시그모이드 제한 공간 ([0.0, 1.0])",
+        "매우 최적 (명확한 확률 분류)",
+        f"최종 정확도(Accuracy): {acc*100:.1f}%"
+    ]
+})
+
+st.table(summary_matrix.set_index("평가 매트릭스 항목"))
+
+# 인텔리전스 분석 요약 브리프 (문법 우려 요소를 완전 제거한 텍스트 기재)
+st.markdown("""
+> **AI 분석 브리프:** 본 인공지능 분석 검증 결과, 종속 변수가 이진 범주형(0 또는 1) 성격을 가질 때 **선형 회귀 모델**은 독립 변수 값이 커짐에 따라 경계를 탈출하는 수치 왜곡을 발생시킵니다. 
+> 반면 **로지스틱 회귀 모델**은 모델 출력을 반드시 0과 1 사이의 기하학적 확률 곡선 도메인 내부로 종속시킴으로써, 왜곡 없는 예리한 임계 분류 예측 성능을 보장합니다.
+""")

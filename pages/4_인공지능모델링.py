@@ -4,115 +4,115 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, accuracy_score, r2_score, brier_score_loss
+from sklearn.metrics import mean_squared_error, accuracy_score, r2_score
 
 # 1. 페이지 설정
-st.set_page_config(page_title="인공지능 실시간 모델링", layout="wide")
+st.set_page_config(page_title="인공지능 실시간 예측", layout="wide")
 
-st.title("4. 인공지능 모델링 및 실시간 예측 (선형 vs 로지스틱)")
-st.markdown("사용자가 입력한 값에 따른 모델의 예측 결과를 실시간으로 확인하고, 두 모델의 성능을 비교합니다.")
+st.title("🤖 인공지능 모델링: 실시간 예측 및 성능 비교")
+st.markdown("금액(Money)에 따른 환급 여부(0 또는 1)를 예측하는 모델입니다. 직접 값을 조절하며 두 모델의 차이를 확인하세요.")
 
-# 2. 데이터 로드 함수
+# 2. 데이터 로드 및 전처리
 @st.cache_data
 def load_data():
     try:
         df = pd.read_csv("onlineCasino.csv")
-        if 'money' not in df.columns or 'outpay' not in df.columns:
-            raise KeyError("필수 컬럼이 부족합니다.")
         df['is_high_outpay'] = (df['outpay'] > df['money']).astype(int)
         return df
-    except Exception as e:
-        # 파일이 없을 경우 안전하게 가상 데이터 생성
+    except:
+        # 데이터가 없을 경우를 대비한 학습용 가상 데이터 생성
         np.random.seed(42)
-        mock_X = np.random.uniform(10, 500, 300)
-        mock_y = (mock_X > 250).astype(int)
-        noise = np.random.choice([0, 1], size=300, p=[0.9, 0.1])
-        mock_y = np.abs(mock_y - noise) 
-        return pd.DataFrame({'money': mock_X, 'is_high_outpay': mock_y})
+        X_mock = np.random.uniform(50, 500, 200)
+        y_mock = (X_mock > 250).astype(int)
+        # 약간의 오차 추가
+        noise = np.random.choice([0, 1], size=200, p=[0.9, 0.1])
+        y_mock = np.abs(y_mock - noise)
+        return pd.DataFrame({'money': X_mock, 'is_high_outpay': y_mock})
 
 df = load_data()
 X = df[['money']].values
 y = df['is_high_outpay'].values
 
 # 데이터 분할
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 3. 모델 학습
-lin_reg = LinearRegression()
-lin_reg.fit(X_train, y_train)
-lin_pred = lin_reg.predict(X_test)
+# 3. 모델 학습 (한 번만 실행)
+lin_reg = LinearRegression().fit(X_train, y_train)
+log_reg = LogisticRegression().fit(X_train, y_train)
 
-log_reg = LogisticRegression()
-log_reg.fit(X_train, y_train)
-log_pred = log_reg.predict(X_test)
-log_pred_proba = log_reg.predict_proba(X_test)[:, 1]
-
-# ================= 🌟 [추가] 4. 사용자 입력 및 실시간 예측 =================
-st.sidebar.header("📥 실시간 예측 입력")
-st.sidebar.markdown("아래 슬라이더를 조절하여 모델에게 예측을 시켜보세요!")
-
-# 데이터의 최소/최대값 범위를 기준으로 슬라이더 생성
-min_val = int(df['money'].min())
-max_val = int(df['money'].max())
-user_input = st.sidebar.slider("베팅 금액 (Money) 입력", min_value=min_val, max_value=max_val, value=int((min_val+max_val)/2))
-
-# 사용자 입력값에 대한 예측 수행
-user_X = np.array([[user_input]])
-user_lin_pred = lin_reg.predict(user_X)[0]
-user_log_pred = log_reg.predict(user_X)[0]
-user_log_proba = log_reg.predict_proba(user_X)[0][1]
-
-# 상단에 실시간 예측 결과 배너 출력
-st.subheader("🔮 실시간 예측 결과")
-p_col1, p_col2 = st.columns(2)
-
-with p_col1:
-    st.info(f"**📉 선형 회귀의 예측값:** `{user_lin_pred:.2f}`\n\n(0과 1 사이를 벗어날 수 있습니다)")
-
-with p_col2:
-    pred_text = "환급금 높음 (1)" if user_log_pred == 1 else "환급금 낮음 (0)"
-    st.success(f"**📈 로지스틱 회귀의 예측:** `{pred_text}` (확률: `{user_log_proba*100:.1f}%`) ")
+# ==================== 🎮 4. 실시간 사용자 입력 세션 ====================
 st.markdown("---")
-# =========================================================================
+st.header("🎮 직접 값을 조절해보세요!")
+# 사용자가 값을 조정할 수 있는 슬라이더 (중앙에 배치)
+min_x, max_x = float(X.min()), float(X.max())
+user_value = st.slider("베팅 금액(Money)을 조절하세요:", min_x, max_x, float(X.mean()))
 
-# 5. 화면 레이아웃 구성 (2단 컬럼 구성)
+# 사용자 입력값에 대한 실시간 예측 계산
+user_X = np.array([[user_value]])
+res_lin = lin_reg.predict(user_X)[0]
+res_log_prob = log_reg.predict_proba(user_X)[0][1]
+res_log_class = 1 if res_log_prob >= 0.5 else 0
+
+# 예측 결과 요약 배너
+c1, c2 = st.columns(2)
+with c1:
+    st.metric("📉 선형 회귀 예측값", f"{res_lin:.2f}")
+    if res_lin > 1 or res_lin < 0:
+        st.warning("⚠️ 예측값이 0과 1의 범위를 벗어났습니다! (선형 회귀의 한계)")
+with c2:
+    status = "성공(1)" if res_log_class == 1 else "실패(0)"
+    st.metric("📈 로지스틱 확률", f"{res_log_prob*100:.1f}%", f"결과: {status}")
+st.markdown("---")
+
+# ==================== 📊 5. 그래프 시각화 세션 ====================
 col1, col2 = st.columns(2)
 
-# --- 왼쪽: 선형 회귀 컬럼 ---
+# 시각화를 위한 부드러운 곡선용 데이터 생성 (S자 곡선을 제대로 그리기 위함)
+X_range = np.linspace(min_x, max_x, 300).reshape(-1, 1)
+lin_line = lin_reg.predict(X_range)
+log_curve = log_reg.predict_proba(X_range)[:, 1]
+
+# --- 왼쪽: 선형 회귀 그래프 ---
 with col1:
-    st.header("📉 선형 회귀 (Linear Regression)")
-    st.markdown("연속형 숫자를 예측합니다. 이진 분류에 쓰면 예측값이 범위를 벗어납니다.")
-    
-    lin_mse = mean_squared_error(y_test, lin_pred)
-    lin_r2 = r2_score(y_test, lin_pred)
-    
-    m1, m2 = st.columns(2)
-    m1.metric("MSE (평균제곱오차)", f"{lin_mse:.4f}")
-    m2.metric("R² Score (결정계수)", f"{lin_r2:.4f}")
-    
-    fig1, ax1 = plt.subplots(figsize=(6, 4))
-    ax1.scatter(X_test, y_test, color='gray', alpha=0.4, label='Actual Data')
-    
-    sort_idx = np.argsort(X_test.flatten())
-    ax1.plot(X_test[sort_idx], lin_pred[sort_idx], color='red', linewidth=2, label='Linear Line')
-    
-    # [추가] 사용자가 입력한 포인트 그래프에 표시
-    ax1.scatter(user_input, user_lin_pred, color='gold', edgecolor='black', s=250, marker='*', zorder=5, label=f'Your Input ({user_input})')
-    
-    ax1.set_xlabel('Money')
-    ax1.set_ylabel('Predicted Value')
+    st.subheader("📉 선형 회귀 결과")
+    fig1, ax1 = plt.subplots()
+    ax1.scatter(X_test, y_test, color='gray', alpha=0.3, label='Actual')
+    ax1.plot(X_range, lin_line, color='red', label='Linear Model') # 예측 직선
+    # 사용자 입력 위치 표시 (노란 별)
+    ax1.scatter(user_value, res_lin, color='orange', marker='*', s=300, zorder=5, label='Your Input')
+    ax1.set_ylim(-0.2, 1.2) # 범위 고정
     ax1.legend()
     st.pyplot(fig1)
 
-# --- 오른쪽: 로지스틱 회귀 컬럼 ---
+# --- 오른쪽: 로지스틱 회귀 그래프 ---
 with col2:
-    st.header("📈 로지스틱 회귀 (Logistic Regression)")
-    st.markdown("특정 클래스에 속할 확률을 예측하며, 아름다운 S자 곡선(Sigmoid)을 그립니다.")
-    
-    log_acc = accuracy_score(y_test, log_pred)
-    # 분류 모델을 위한 연속형 지표인 Brier Score도 추가 계산 (비교용)
-    log_brier = brier_score_loss(y_test, log_pred_proba)
-    
-    m3, m4 = st.columns(2)
-    m3.metric("Accuracy (정확도)", f"{log_acc * 100:.1f}%")
-    m4.metric("Brier Score (예측오차)", f"{log_brier:.4f}")
+    st.subheader("📈 로지스틱 회귀 결과")
+    fig2, ax2 = plt.subplots()
+    ax2.scatter(X_test, y_test, color='gray', alpha=0.3, label='Actual')
+    ax2.plot(X_range, log_curve, color='blue', label='Logistic Model (S-Curve)') # 예측 S곡선
+    ax2.axhline(0.5, color='green', linestyle='--', alpha=0.5) # 기준선
+    # 사용자 입력 위치 표시 (노란 별)
+    ax2.scatter(user_value, res_log_prob, color='orange', marker='*', s=300, zorder=5, label='Your Input')
+    ax2.set_ylim(-0.1, 1.1)
+    ax2.legend()
+    st.pyplot(fig2)
+
+# ==================== 🏆 6. 모델 성능 비교 세션 ====================
+st.header("🏆 어떤 모델이 더 똑똑할까요?")
+
+# 성능 지표 계산
+mse = mean_squared_error(y_test, lin_reg.predict(X_test))
+acc = accuracy_score(y_test, log_reg.predict(X_test))
+
+m_col1, m_col2, m_col3 = st.columns(3)
+m_col1.info(f"**선형 회귀 MSE (오차)**\n\n {mse:.4f}")
+m_col2.success(f"**로지스틱 정확도**\n\n {acc*100:.1f}%")
+m_col3.write("**💡 모델링 가이드**\n이진 분류(0/1) 문제에서는 **로지스틱 회귀**가 확률을 0~1 사이로 제한해주기 때문에 훨씬 정확하고 안정적입니다.")
+
+# 비교표
+comparison = {
+    "특징": ["예측 형태", "값의 범위", "분류 방식", "적합도"],
+    "선형 회귀": ["곧은 직선", "제한 없음 (범위 이탈)", "단순 수치 계산", "낮음"],
+    "로지스틱 회귀": ["부드러운 S자 곡선", "0 ~ 1 사이 고정", "확률 기반 분류", "매우 높음"]
+}
+st.table(pd.DataFrame(comparison))

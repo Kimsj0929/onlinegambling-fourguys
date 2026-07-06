@@ -6,15 +6,15 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, accuracy_score
 
-# 1. 글로벌 레이아웃 설정
-st.set_page_config(page_title="NEXUS QUANTUM AI | ANALYTICS", layout="wide")
+# 1. 글로벌 레이아웃 설정 (전문 분석 플랫폼 스타일)
+st.set_page_config(page_title="NEXUS 퀀텀 AI | 분석 대시보드", layout="wide")
 
-# CSS 주입 (파이썬 구문 분석 충돌 위험 요소를 모두 제거한 순수 문자열 변수)
+# CSS 주입 (안정적인 커스텀 스타일)
 css_style = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
 html, body, [data-testid="stMarkdownContainer"] {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Noto Sans KR', sans-serif;
 }
 .main-title {
     font-size: 2.2rem;
@@ -36,10 +36,11 @@ html, body, [data-testid="stMarkdownContainer"] {
     margin-bottom: 1rem;
 }
 .metric-label {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.05rem;
     color: #6C7D93;
+    font-weight: 700;
 }
 .metric-value {
     font-size: 1.8rem;
@@ -57,10 +58,10 @@ html, body, [data-testid="stMarkdownContainer"] {
 st.markdown(css_style, unsafe_allow_html=True)
 
 # 헤더 영역
-st.markdown('<div class="main-title">NEXUS ANALYTICS │ QUANTUM AI ENGINE</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Comparative Analysis of Linear Projection vs. Logistic Probability Topologies</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">NEXUS 분석 엔진 │ 퀀텀 AI 코어</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">선형 예측 직선과 로지스틱 확률 곡선 토폴로지의 비교 분석 실시간 시뮬레이터</div>', unsafe_allow_html=True)
 
-# 2. 데이터 시뮬레이션 및 파이프라인 빌드
+# 2. 데이터 데이터셋 로드 및 분석 파이프라인
 @st.cache_data
 def load_analytical_data():
     try:
@@ -81,18 +82,18 @@ y = df['is_high_outpay'].values
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 모델 백엔드 연산
+# 인공지능 모델 학습 연산
 lin_reg = LinearRegression().fit(X_train, y_train)
 log_reg = LogisticRegression().fit(X_train, y_train)
 
-# ==================== CONTROLLER (PARAMETER INPUT) ====================
-st.markdown("### 🎛️ PARAMETER REAL-TIME CONFIGURATOR")
+# ==================== 컨트롤러 (실시간 매개변수 입력) ====================
+st.markdown("### 🎛️ 하이퍼파라미터 실시간 제어 컨솔")
 min_x, max_x = float(X.min()), float(X.max())
 
-# 인터랙티브 컨트롤 슬라이더
-user_value = st.slider("HYPER-PARAMETER INPUT: BETA VALUE (MONEY)", min_x, max_x, float(X.mean()), step=0.1)
+# 인터랙티브 슬라이더
+user_value = st.slider("분석 입력 데이터 제어: 베팅 금액 (Money)", min_x, max_x, float(X.mean()), step=0.1)
 
-# 실시간 인프런스(Inference) 연산
+# AI 실시간 추론(Inference) 연산
 user_X = np.array([[user_value]])
 res_lin = lin_reg.predict(user_X)[0]
 res_log_prob = log_reg.predict_proba(user_X)[0][1]
@@ -100,18 +101,18 @@ res_log_class = 1 if res_log_prob >= 0.5 else 0
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ==================== METRIC SHOWCASE ====================
+# ==================== 실시간 분석 메트릭 시각화 ====================
 p_col1, p_col2 = st.columns(2)
 
 with p_col1:
     if res_lin < 0 or res_lin > 1:
-        desc_text = "<span style='color:#FF5252;'>⚠️ Out of bounds ([0, 1] Range Violated)</span>"
+        desc_text = "<span style='color:#FF5252;'>⚠️ 확률 범위 초과 (0과 1 사이의 분류 경계가 붕괴됨)</span>"
     else:
-        desc_text = "✅ Within theoretical bounds"
+        desc_text = "✅ 수치적 타당성 범위 내에 존재"
         
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">Linear Projection Output (Continuous)</div>
+        <div class="metric-label">선형 회귀 연속형 예측 출력값 (Linear Projection)</div>
         <div class="metric-value">{res_lin:.4f}</div>
         <div class="metric-desc">{desc_text}</div>
     </div>
@@ -120,46 +121,46 @@ with p_col1:
 with p_col2:
     if res_log_class == 1:
         status_color = "#00E676"
-        status_text = "STATE: ACTIVE (1)"
+        status_text = "최종 분류 상태: 환급 성공 예측 (1)"
     else:
         status_color = "#FF5252"
-        status_text = "STATE: INACTIVE (0)"
+        status_text = "최종 분류 상태: 환급 실패 예측 (0)"
         
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">Logistic Sigmoid Probability</div>
+        <div class="metric-label">로지스틱 시그모이드 연산 확률 (Logistic Probability)</div>
         <div class="metric-value">{res_log_prob * 100:.2f}%</div>
-        <div class="metric-desc" style="color:{status_color}; font-weight:600;">{status_text} (Threshold: 0.5)</div>
+        <div class="metric-desc" style="color:{status_color}; font-weight:600;">{status_text} (분류 임계치 크리테리온: 0.5)</div>
     </div>
     """, unsafe_allow_html=True)
 
-# ==================== VISUALIZATION ENGINE ====================
+# ==================== 시각화 분석 그래픽스 엔진 ====================
 col1, col2 = st.columns(2)
 
-# 고해상도 S-곡선 매핑을 위한 촘촘한 도메인 생성
+# 매끄러운 S곡선 플로팅을 위한 밀집 영역 세그먼트 생성
 X_range = np.linspace(min_x, max_x, 500).reshape(-1, 1)
 lin_line = lin_reg.predict(X_range)
 log_curve = log_reg.predict_proba(X_range)[:, 1]
 
-# Matplotlib 글로벌 다크 스타일 정의
+# Matplotlib 글로벌 다크 테마 커스텀 설정
 plt.style.use('dark_background')
 plt.rcParams['text.color'] = '#8A99AD'
 plt.rcParams['axes.labelcolor'] = '#8A99AD'
 plt.rcParams['xtick.color'] = '#4A5568'
 plt.rcParams['ytick.color'] = '#4A5568'
 
-# --- Left Graph: Linear ---
+# --- 왼쪽 그래프: 선형 회귀 ---
 with col1:
-    st.markdown("#### 📉 LINEAR REGRESSION PROJECTION")
+    st.markdown("#### 📉 선형 회귀 모델 예측 직선")
     fig1, ax1 = plt.subplots(figsize=(7, 4.2))
     fig1.patch.set_facecolor('#0E1117')
     ax1.set_facecolor('#111625')
     
-    ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Empirical Data', zorder=2)
-    ax1.plot(X_range, lin_line, color='#FF2E93', linewidth=2.5, label='Linear State', zorder=3)
+    ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='실제 검증 데이터(Empirical)', zorder=2)
+    ax1.plot(X_range, lin_line, color='#FF2E93', linewidth=2.5, label='선형 예측 추세선', zorder=3)
     
-    # 실시간 포인트 인디케이터 (주황 크로스헤어 & 대형 타겟 도트)
-    ax1.scatter(user_value, res_lin, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Current State')
+    # 실시간 다이내믹 포인터 락
+    ax1.scatter(user_value, res_lin, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='실시간 입력 위치')
     ax1.axvline(user_value, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
     
     ax1.set_ylim(-0.3, 1.3)
@@ -167,55 +168,8 @@ with col1:
     ax1.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
     st.pyplot(fig1)
 
-# --- Right Graph: Logistic ---
+# --- 오른쪽 그래프: 로지스틱 회귀 ---
 with col2:
-    st.markdown("#### 📈 LOGISTIC CLASSIFICATION CURVE")
+    st.markdown("#### 📈 로지스틱 분류 확률 시그모이드 곡선")
     fig2, ax2 = plt.subplots(figsize=(7, 4.2))
-    fig2.patch.set_facecolor('#0E1117')
-    ax2.set_facecolor('#111625')
-    
-    ax2.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Empirical Data', zorder=2)
-    ax2.plot(X_range, log_curve, color='#00E5FF', linewidth=2.5, label='Sigmoid Function', zorder=3)
-    ax2.axhline(0.5, color='#718096', linestyle='--', linewidth=1, alpha=0.6, label='Decision Boundary (0.5)')
-    
-    # 실시간 포인트 인디케이터
-    ax2.scatter(user_value, res_log_prob, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Current State')
-    ax2.axvline(user_value, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
-    
-    ax2.set_ylim(-0.1, 1.1)
-    ax2.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-    ax2.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-    st.pyplot(fig2)
-
-# ==================== SYNOPSIS & PERFORMANCE REPORT ====================
-st.markdown("<br>", unsafe_allow_html=True)
-st.markdown("### ⚖️ MODEL SYNOPSIS & EFFICIENCY REPORT")
-
-# 오차 및 검증 행렬 연산
-mse = mean_squared_error(y_test, lin_reg.predict(X_test))
-acc = accuracy_score(y_test, log_reg.predict(X_test))
-
-# 고성능 매트릭스 표 테이블 시각화
-summary_matrix = pd.DataFrame({
-    "MATRICES": ["OBJECTIVE FUNCTION", "OUTPUT TOPOLOGY", "CLASSIFICATION APTITUDE", "VALIDATION SCORE"],
-    "MODEL 01: LINEAR REGRESSION": [
-        "Continuous Value Optimization",
-        "Unbounded (-∞ to +∞)",
-        "Not Recommended (Mathematical Distortion)",
-        f"MSE: {mse:.4f}"
-    ],
-    "MODEL 02: LOGISTIC REGRESSION": [
-        "Binary Class Probability Optimization",
-        "Bounded Sigmoid Space ([0.0, 1.0])",
-        "Highly Optimal (Definitive Categorization)",
-        f"ACCURACY: {acc*100:.1f}%"
-    ]
-})
-
-st.table(summary_matrix.set_index("MATRICES"))
-
-# 인텔리전스 브리프 서머리
-st.markdown("""
-> **INTELLIGENCE BRIEF:** 본 분석 엔진 검증 결과, 종속 변수가 이진 범주형 구조를 가질 때 **Linear Model**은 도메인 경계를 초과하는 수치적 왜곡을 초래합니다. 
-> 반면, **Logistic Model**은 출력을 0과 1 사이의 기하학적 확률 곡선 공간 내에 완전 구속함으로써 예리한 임계 기준 예측을 가능하게 합니다. 
-""")
+    fig2.patch.set_facecolor('#0E1

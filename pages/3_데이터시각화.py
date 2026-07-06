@@ -7,7 +7,7 @@ import seaborn as sns
 # 1. 페이지 레이아웃 설정
 st.set_page_config(page_title="NEXUS 인텔리전트 데이터 캔버스", layout="wide")
 
-# CSS 주입 (파이썬 구문 파서 충돌 위험 요소를 완전히 배제한 안전한 문자열)
+# CSS 주입 (안전한 기본 템플릿)
 css_style = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
@@ -18,13 +18,10 @@ html, body, [data-testid="stMarkdownContainer"] {
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# ==================== [핵심 수정] 폰트 깨짐 방지 설정 ====================
+# Matplotlib 테마 및 폰트 강제 고정 (한글 폰트 미설치 서버용 기본 고딕 설정)
 plt.style.use('dark_background')
-
-# 시스템에 한글 폰트가 없을 때를 대비하여 전역 기본 고딕(sans-serif) 스타일을 강제 적용하고,
-# 한글을 그릴 수 있는 폰트 서브셋을 Matplotlib 전역 엔진에 주입합니다.
 plt.rcParams['font.family'] = 'sans-serif'
-plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial', 'Helvetica', 'Liberation Sans', 'DejaVu Sans Unicode']
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial', 'Helvetica', 'Liberation Sans']
 plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['text.color'] = '#8A99AD'
 plt.rcParams['axes.labelcolor'] = '#8A99AD'
@@ -104,96 +101,93 @@ numeric_features = ['gamers', 'skins', 'money', 'ticks', 'outpay']
 features = [c for c in numeric_features if c in df_raw.columns]
 
 # ==================== GRAPH 1. 상관관계 히트맵 ====================
-st.markdown("#### 🌡️ 1. 데이터 항목 간의 수치적 연관성 지도 (서로 얼마나 닮아있는가)")
-st.write("수치가 1에 가까울수록 한쪽이 늘어날 때 다른 쪽도 똑같이 늘어나는 긴밀한 사이임을 뜻합니다.")
+st.markdown("#### 🌡️ 1. 데이터 항목 간의 수치적 연관성 지도")
 h_col1, h_col2 = st.columns(2)
 
 corr_raw = df_raw[features].corr()
 corr_clean = df_clean[features].corr()
 
-# 서버 환경에서도 100% 안전하게 출력 가능한 영문 베이스 + 국문 융합 라벨링 적용
-ko_labels = ['Gamers (유저수)', 'Skins (스킨수)', 'Money (베팅금)', 'Ticks (시간)', 'Outpay (환급금)']
+# 깨짐 방지를 위해 깔끔한 대문자 영문으로 전면 교체
+clean_labels = ['Gamers', 'Skins', 'Money', 'Ticks', 'Outpay']
 
 with h_col1:
-    st.markdown("##### [원본] 노이즈가 섞인 변수별 연관성")
+    st.markdown("##### [Raw] 원본 상관성")
     fig_h1, ax_h1 = plt.subplots(figsize=(6, 3.8))
     fig_h1.patch.set_facecolor('#0E1117')
     ax_h1.set_facecolor('#111625')
-    sns.heatmap(corr_raw, annot=True, cmap='vlag', fmt=".2f", ax=ax_h1, cbar=False, vmin=-1, vmax=1, xticklabels=ko_labels, yticklabels=ko_labels)
+    sns.heatmap(corr_raw, annot=True, cmap='vlag', fmt=".2f", ax=ax_h1, cbar=False, vmin=-1, vmax=1, xticklabels=clean_labels, yticklabels=clean_labels)
     st.pyplot(fig_h1)
 
 with h_col2:
-    st.markdown("##### [정제 후] 노이즈 제거 완료된 변수별 연관성")
+    st.markdown("##### [Clean] 정제 후 상관성")
     fig_h2, ax_h2 = plt.subplots(figsize=(6, 3.8))
     fig_h2.patch.set_facecolor('#0E1117')
     ax_h2.set_facecolor('#111625')
-    sns.heatmap(corr_clean, annot=True, cmap='vlag', fmt=".2f", ax=ax_h2, cbar=False, vmin=-1, vmax=1, xticklabels=ko_labels, yticklabels=ko_labels)
+    sns.heatmap(corr_clean, annot=True, cmap='vlag', fmt=".2f", ax=ax_h2, cbar=False, vmin=-1, vmax=1, xticklabels=clean_labels, yticklabels=clean_labels)
     st.pyplot(fig_h2)
 
 st.markdown("---")
 
 # ==================== GRAPH 2. 분포 박스플롯 ====================
-st.markdown("#### 📦 2. 주요 데이터 수치 범위 분포 (최소/최대 및 격리 구역)")
+st.markdown("#### 📦 2. 주요 데이터 수치 범위 분포")
 b_col1, b_col2 = st.columns(2)
 box_features = ['money', 'outpay']
 
 with b_col1:
-    st.markdown("##### [원본] 극단적 이상치가 포함된 수치 범위")
+    st.markdown("##### [Raw] 이상치 포함 영역")
     fig_b1, ax_b1 = plt.subplots(figsize=(6, 3.8))
     fig_b1.patch.set_facecolor('#0E1117')
     ax_b1.set_facecolor('#111625')
-    
     sns.boxplot(data=df_raw[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b1)
     
     plt.sca(ax_b1)
-    plt.xticks([0, 1], ['Money (베팅금액)', 'Outpay (환급금액)'])
-    plt.ylabel("Value Range (수치 범위)")
+    plt.xticks([0, 1], ['Money', 'Outpay'])
+    plt.ylabel("Value Range")
     ax_b1.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     st.pyplot(fig_b1)
 
 with b_col2:
-    st.markdown("##### [정제 후] 필터 조건이 반영된 안정적인 수치 범위")
+    st.markdown("##### [Clean] 경계선 실시간 조절")
     fig_b2, ax_b2 = plt.subplots(figsize=(6, 3.8))
     fig_b2.patch.set_facecolor('#0E1117')
     ax_b2.set_facecolor('#111625')
-    
     sns.boxplot(data=df_clean[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b2)
     
     plt.sca(ax_b2)
-    plt.xticks([0, 1], ['Money (베팅금액)', 'Outpay (환급금액)'])
-    plt.ylabel("Value Range (수치 범위)")
+    plt.xticks([0, 1], ['Money', 'Outpay'])
+    plt.ylabel("Value Range")
     ax_b2.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     st.pyplot(fig_b2)
 
 st.markdown("---")
 
 # ==================== GRAPH 3. 산점도 및 바 차트 ====================
-st.markdown("#### 🎯 3. 데이터 분포 형태 및 베팅 규모별 평균 환급 구조")
+st.markdown("#### 🎯 3. 데이터 분포 형태 및 등급별 평균 환급 구조")
 s_col1, s_col2 = st.columns(2)
 
 with s_col1:
-    st.markdown("##### 🔵 데이터 개별 위치 지도 (산점도)")
+    st.markdown("##### 🔵 데이터 분포 산점도")
     fig_s, ax_s = plt.subplots(figsize=(6, 4.2))
     fig_s.patch.set_facecolor('#0E1117')
     ax_s.set_facecolor('#111625')
     
-    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.3, label='Outliers (이상치 구역)', s=35)
-    ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.8, label='Cleaned (정상 구역)', s=20)
+    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.3, label='Outliers', s=35)
+    ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.8, label='Cleaned', s=20)
     
     plt.sca(ax_s)
-    plt.xlabel('Money (베팅 금액)')
-    plt.ylabel('Outpay (환급 금액)')
+    plt.xlabel('Money')
+    plt.ylabel('Outpay')
     ax_s.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     ax_s.legend(facecolor='#111625', edgecolor='#232D42')
     st.pyplot(fig_s)
 
 with s_col2:
-    st.markdown("##### 📊 베팅 등급별 평균 환급금 비교 (바 차트)")
+    st.markdown("##### 📊 규모별 평균 환급 비교")
     
     df_raw_bar = df_raw.copy()
     df_clean_bar = df_clean.copy()
     
-    group_labels = ['Low (소액)', 'Medium (중액)', 'High (고액)']
+    group_labels = ['Low', 'Medium', 'High']
     df_raw_bar['group'] = pd.qcut(df_raw_bar['money'], q=3, labels=group_labels)
     
     try:
@@ -213,8 +207,8 @@ with s_col2:
     bar_df.plot(kind='bar', color=['#4A5568', '#00E5FF'], ax=ax_bar, rot=0)
     
     plt.sca(ax_bar)
-    plt.xlabel('Betting Groups (베팅 규모 그룹)')
-    plt.ylabel('Average Outpay (평균 환급금)')
+    plt.xlabel('Betting Groups')
+    plt.ylabel('Average Outpay')
     ax_bar.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     ax_bar.legend(facecolor='#111625', edgecolor='#232D42')
     st.pyplot(fig_bar)

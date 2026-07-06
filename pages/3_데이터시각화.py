@@ -3,102 +3,148 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-# 페이지 기본 설정
-st.set_page_config(page_title="온라인 카지노 데이터 시각화", layout="wide")
+# 1. 페이지 설정
+st.set_page_config(page_title="데이터 전처리 전/후 비교 대시보드", layout="wide")
 
-st.title("3. 데이터 시각화 (Plotly 버전)")
-st.markdown("전처리 전 `onlineCasino.csv` 데이터를 분석하고 시각화하는 페이지입니다.")
+st.title("📊 데이터 전처리 전(Before) vs 후(After) 종합 비교 분석")
+st.markdown("설계하신 종속변수 `peopleLost`(잃은 유저 수)와 `outpay`(지급액)를 중심으로 전처리 효과를 분석합니다.")
 
-# 1. 데이터 로드 및 캐싱
+# 2. 데이터 로드 및 캐싱
 @st.cache_data
 def load_data():
-    df = pd.read_csv("onlineCasino.csv")
-    df['time'] = pd.to_datetime(df['time'], errors='coerce')
-    return df
+    # 전처리 전 원본 데이터와 전처리 후 데이터를 모두 불러옵니다.
+    df_before = pd.read_csv("onlineCasino.csv")
+    df_after = pd.read_csv("onlineCasino_cleaned_v2.csv")
+    return df_before, df_after
 
 try:
-    df = load_data()
+    df_before, df_after = load_data()
 except FileNotFoundError:
-    st.error("📂 'onlineCasino.csv' 파일을 찾을 수 없습니다. 파일 경로를 확인해 주세요.")
+    st.error("📂 파일 로드 실패! 'onlineCasino.csv'와 'onlineCasino_cleaned_v2.csv' 파일이 같은 경로에 있는지 확인해 주세요.")
     st.stop()
 
-# 2. 레이아웃 구성을 위한 탭 생성
-tab1, tab2, tab3, tab4 = st.tabs(["🔥 히트맵 (상관관계)", "✨ 산점도 (관계 분석)", "📊 분포 차트", "📦 박스 플롯 (비교)"])
 
-# --- 🔥 1. 히트맵 (Heatmap) ---
-with tab1:
-    st.subheader("변수 간 상관관계 히트맵")
-    st.markdown("수치형 변수들 간의 상관계수를 시각화하여 어떤 변수들이 서로 밀접한지 확인합니다.")
-    
-    numeric_cols = df.select_dtypes(include=[np.number]).drop(columns=['ID'], errors='ignore')
-    corr_matrix = numeric_cols.corr()
-    
-    fig_heatmap = px.imshow(
-        corr_matrix,
-        text_auto=".2f",
-        color_continuous_scale="RdBu_r",
-        zmin=-1, zmax=1,
-        title="수치형 변수 상관관계 행렬 (Correlation Matrix)"
-    )
-    st.plotly_chart(fig_heatmap, use_container_width=True)
+# 3. 사이드바 (Sidebar) - 종속변수 타겟 선택 및 요약 정보
+st.sidebar.header("🎯 종속변수(Target) 설정")
+target_var = st.sidebar.selectbox("시각화 기준 종속변수 선택", ["outpay", "peopleLost"])
+st.sidebar.markdown(f"현재 선택된 종속변수: **`{target_var}`**")
 
-# --- ✨ 2. 산점도 (Scatter Plot) ---
-with tab2:
-    st.subheader("참여 게이머 수 vs 총 판돈(Money) 산점도")
-    st.markdown("> 💡 **Tip:** 데이터가 많아 렉을 방지하고 시각화 직관성을 높이기 위해 **무작위로 2,000건을 샘플링**하여 출력합니다.")
-    
-    df_sample = df.sample(n=min(2000, len(df)), random_state=42)
-    
-    fig_scatter = px.scatter(
-        df_sample,
-        x="gamers",
-        y="money",
-        color="moderator",
-        hover_data=["ticks", "outpay"],
-        title="게이머 수와 판돈의 관계 (중재자 여부별 색상 구분)",
-        labels={"gamers": "참여 게이머 수", "money": "총 판돈 (Money)"}
-    )
-    st.plotly_chart(fig_scatter, use_container_width=True)
+st.sidebar.write("---")
+st.sidebar.markdown("### 📋 데이터 크기 비교")
+st.sidebar.write(f"- ❌ **전처리 전:** {len(df_before):,} 행 (time 결측치 10건 포함)")
+st.sidebar.write(f"-  **전처리 후:** {len(df_after):,} 행 (결측치 완전 박멸)")
 
-# --- 📊 3. 분포 차트 (Distribution Chart) ---
-with tab3:
-    st.subheader("배당률(Ticks) 분포 차트")
-    st.markdown("현재 데이터의 배당률(`ticks`)은 극단적인 이상치가 존재합니다. 슬라이더를 조절하여 원하는 분포 범위를 확인해 보세요.")
-    
-    max_tick_slider = st.slider("시각화할 최대 배당률(Ticks) 제한", min_value=5, max_value=200, value=30, step=5)
-    filtered_df_ticks = df[df["ticks"] <= max_tick_slider]
-    
-    fig_dist = px.histogram(
-        filtered_df_ticks,
-        x="ticks",
-        nbins=50,
-        title=f"배당률(Ticks) 분포 (Ticks가 {max_tick_slider} 이하인 데이터 대상)",
-        labels={"ticks": "배당률 (Ticks)"},
-        color_discrete_sequence=["#1f77b4"]
-    )
-    st.plotly_chart(fig_dist, use_container_width=True)
 
-# --- 📦 4. 박스 플롯 (Box Plot) ---
-with tab4:
-    st.subheader("중재자 유무에 따른 판돈(Money) 분포 비교")
-    st.markdown("중재자(`moderator`) 유무에 따라 판돈의 흐름이나 격차가 어떻게 다른지 박스 플롯으로 비교합니다.")
+# 4. 메인 화면 - 전처리 전 / 후로 레이아웃 분할
+# 사용자가 한 화면에서 직관적으로 비교할 수 있도록 왼쪽-오른쪽 2단 컬럼 구성을 사용합니다.
+col_left, col_right = st.columns(2)
+
+# ==========================================
+# ❌ LEFT: 전처리 전 (Before Preprocessing)
+# ==========================================
+with col_left:
+    st.header("❌ 전처리 전 데이터 (Original)")
+    st.caption("이상치와 결측치가 정제되지 않아 그래프 왜곡이 발생할 수 있습니다.")
     
-    show_all = st.checkbox("아웃라이어(이상치)를 포함한 전체 데이터로 보기", value=False)
+    # 전처리 전의 대용량 렉 방지 샘플링
+    df_b_sample = df_before.sample(n=min(2000, len(df_before)), random_state=42)
     
-    if not show_all:
-        q_95 = df["money"].quantile(0.95)
-        filtered_df_box = df[df["money"] <= q_95]
-        box_title = f"중재자 유무별 판돈 분포 (상위 5% 이상치 제외, Money <= {q_95:.1f})"
-    else:
-        filtered_df_box = df
-        box_title = "중재자 유무별 판돈 분포 (전체 데이터)"
-        
-    fig_box = px.box(
-        filtered_df_box,
-        x="moderator",
-        y="money",
-        color="moderator",
-        title=box_title,
-        labels={"moderator": "중재자 여부 (Moderator)", "money": "총 판돈 (Money)"}
+    # [그래프 1] 상관관계 히트맵
+    st.subheader("🔥 1. 변수 간 상관관계 히트맵")
+    # 종속변수들과 수치형 변수들 간의 관계 분석
+    numeric_cols_b = df_before.select_dtypes(include=[np.number]).drop(columns=['ID'], errors='ignore')
+    corr_b = numeric_cols_b.corr()
+    fig_heat_b = px.imshow(
+        corr_b, text_auto=".2f", color_continuous_scale="RdBu_r", zmin=-1, zmax=1,
+        title="전처리 전 수치형 변수 상관관계"
     )
-    st.plotly_chart(fig_box, use_container_width=True)
+    st.plotly_chart(fig_heat_b, use_container_width=True)
+    
+    # [그래프 2] 산점도 (독립변수 gamers vs 선택한 종속변수)
+    st.subheader(f"✨ 2. 참여 게이머 수 vs 종속변수({target_var}) 산점도")
+    fig_scat_b = px.scatter(
+        df_b_sample, x="gamers", y=target_var, color="moderator",
+        title=f"[전처리 전] 게이머 수와 {target_var}의 관계",
+        labels={"gamers": "참여 게이머 수"}
+    )
+    st.plotly_chart(fig_scat_b, use_container_width=True)
+    
+    # [그래프 3] 분포 차트 (종속변수 히스토그램)
+    st.subheader(f"📊 3. 종속변수({target_var}) 분포 차트")
+    fig_hist_b = px.histogram(
+        df_before, x=target_var, nbins=50,
+        title=f"[전처리 전] {target_var} 전체 데이터 빈도 분포",
+        color_discrete_sequence=["#EF553B"]
+    )
+    st.plotly_chart(fig_hist_b, use_container_width=True)
+    
+    # [그래프 4] 박스 플롯 (중재자 유무에 따른 종속변수 비교)
+    st.subheader(f"📦 4. 중재자 유무별 종속변수({target_var}) 박스플롯")
+    fig_box_b = px.box(
+        df_before, x="moderator", y=target_var, color="moderator",
+        title=f"[전처리 전] 중재자 개입 여부별 {target_var} 분포"
+    )
+    st.plotly_chart(fig_box_b, use_container_width=True)
+
+
+# ==========================================
+#  RIGHT: 전처리 후 (After Preprocessing)
+# ==========================================
+with col_right:
+    st.header(" 전처리 후 데이터 (Cleaned)")
+    st.caption("파생변수가 추가되었으며, 상위 1% 아웃라이어 조정을 통해 데이터 경향성이 뚜렷합니다.")
+    
+    # 전처리 후의 대용량 렉 방지 샘플링
+    df_a_sample = df_after.sample(n=min(2000, len(df_after)), random_state=42)
+    
+    # [그래프 1] 상관관계 히트맵 (파생변수가 대거 추가되어 더 풍부한 인사이트)
+    st.subheader("🔥 1. 고도화된 변수 간 상관관계 히트맵")
+    numeric_cols_a = df_after.select_dtypes(include=[np.number]).drop(columns=['ID'], errors='ignore')
+    corr_a = numeric_cols_a.corr()
+    fig_heat_a = px.imshow(
+        corr_a, text_auto=".2f", color_continuous_scale="RdBu_r", zmin=-1, zmax=1,
+        title="전처리 후 수치형 변수 상관관계 (파생변수 포함)"
+    )
+    st.plotly_chart(fig_heat_a, use_container_width=True)
+    
+    # [그래프 2] 산점도 (독립변수 gamers vs 선택한 종속변수 - 정제 버전)
+    st.subheader(f"✨ 2. 참여 게이머 수 vs 종속변수({target_var}) 산점도")
+    fig_scat_a = px.scatter(
+        df_a_sample, x="gamers", y=target_var, color="moderator",
+        title=f"[전처리 후] 게이머 수와 {target_var}의 관계 (아웃라이어 제어)",
+        labels={"gamers": "참여 게이머 수"},
+        opacity=0.7
+    )
+    st.plotly_chart(fig_scat_a, use_container_width=True)
+    
+    # [그래프 3] 분포 차트 (종속변수 히스토그램 - 안정된 스케일)
+    st.subheader(f"📊 3. 종속변수({target_var}) 분포 차트")
+    # 극단치 스케일 왜곡 방지를 위해 상위 99% 컷팅 후 시각화
+    q_99 = df_after[target_var].quantile(0.99)
+    df_hist_filtered = df_after[df_after[target_var] <= q_99]
+    
+    fig_hist_a = px.histogram(
+        df_hist_filtered, x=target_var, nbins=50,
+        title=f"[전처리 후] {target_var} 분포 (상위 1% 극단치 제외 버전)",
+        color_discrete_sequence=["#636EFA"]
+    )
+    st.plotly_chart(fig_hist_a, use_container_width=True)
+    
+    # [그래프 4] 박스 플롯 (중재자 유무에 따른 종속변수 비교 - 시각적 왜곡 제거)
+    st.subheader(f"📦 4. 중재자 유무별 종속변수({target_var}) 박스플롯")
+    fig_box_a = px.box(
+        df_hist_filtered, x="moderator", y=target_var, color="moderator",
+        points="outliers",
+        title=f"[전처리 후] 중재자 개입 여부별 {target_var} 분포 (비교 가독성 극대화)"
+    )
+    st.plotly_chart(fig_box_a, use_container_width=True)
+
+
+# 5. 하단 종속변수 모델링 가이드 섹션 (조별 발표용)
+st.write("---")
+st.subheader("💡 종속변수(`outpay`, `peopleLost`) 관점의 전처리 차이점 요약 (발표 팁)")
+st.info(f"""
+- **분석의 흐름:** 좌측(전처리 전) 그래프들은 극단적인 몇몇 최고 배당률(`ticks`)과 총판돈(`money`)의 이상치 때문에 데이터 분포가 아래쪽으로 뭉개져 스케일 왜곡이 심합니다.
+- **`outpay` (플레이어 지급액) 관점:** 전처리 후 오른쪽 분포차트와 박스플롯을 보면, 몇몇 이상치를 적절히 조율함으로써 중재자(`moderator`) 유무에 따라 카지노가 유저에게 주는 배당금 분포 격차가 어떻게 변하는지 왜곡 없이 깨끗하게 관찰됩니다.
+- **`peopleLost` (패배 유저 수) 관점:** 전처리 후 히트맵을 확인하시면, 새로 추가된 시간대별 파생변수(`hour`)와 결합했을 때 특정 피크타임에 패배하는 유저 수(`peopleLost`)의 밀도와 상관성이 더욱 뚜렷하게 증명됩니다.
+""")

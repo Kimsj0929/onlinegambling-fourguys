@@ -59,10 +59,12 @@ acc = accuracy_score(y_test, log_model.predict(X_test))
 
 # ==================== 실시간 예측 컨트롤러 ====================
 st.markdown('<div class="section-header">🕹️ 하이퍼파라미터 실시간 제어 콘솔</div>', unsafe_allow_html=True)
-min_x, max_x = float(X.min()), float(X.max())
+min_x = float(X.min())
+max_x = float(X.max())
+mean_x = float(X.mean())
 
 # 컨트롤 슬라이더 레이블 한글화 및 내부 변수 영어 유지
-user_val = st.slider("입력 데이터 제어 범위 설정: Money (Betting Amount)", min_x, max_x, float(X.mean()), step=0.1)
+user_val = st.slider("입력 데이터 제어 범위 설정: Money (Betting Amount)", min_x, max_x, mean_x, step=0.1)
 
 # 실시간 분석 추론 연산
 pred_lin = lin_model.predict([[user_val]])[0]
@@ -106,4 +108,47 @@ X_range = np.linspace(min_x, max_x, 500).reshape(-1, 1)
 plt.style.use('dark_background')
 plt.rcParams.update({
     'font.family': 'sans-serif',
-    'font.sans-serif':
+    'font.sans-serif': ['DejaVu Sans', 'Arial', 'Helvetica', 'Liberation Sans'],
+    'text.color': '#8A99AD', 
+    'axes.labelcolor': '#8A99AD',
+    'xtick.color': '#4A5568',
+    'ytick.color': '#4A5568'
+})
+
+# --- 첫 번째 그래프 행 (기존 회귀분석 차트) ---
+col_g1, col_g2 = st.columns(2)
+
+with col_g1:
+    st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
+    fig1, ax1 = plt.subplots(figsize=(7, 3.8))
+    fig1.patch.set_facecolor('#0E1117')
+    ax1.set_facecolor('#111625')
+    
+    ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
+    ax1.plot(X_range, lin_model.predict(X_range), color='#FF2E93', linewidth=2.5, label='Linear Trend Line', zorder=3)
+    ax1.scatter(user_val, pred_lin, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Input')
+    ax1.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
+    
+    ax1.set_xlabel('Money')
+    ax1.set_ylabel('Predicted Value')
+    ax1.set_ylim(-0.3, 1.3)
+    ax1.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
+    ax1.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
+    st.pyplot(fig1)
+    plt.close(fig1)
+
+with col_g2:
+    st.markdown("#### 📈 로지스틱 시그모이드 곡선 모델 예측 결과")
+    fig2, ax2 = plt.subplots(figsize=(7, 3.8))
+    fig2.patch.set_facecolor('#0E1117')
+    ax2.set_facecolor('#111625')
+    
+    ax2.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
+    ax2.plot(X_range, log_model.predict_proba(X_range)[:, 1], color='#00E5FF', linewidth=2.5, label='Sigmoid Curve', zorder=3)
+    ax2.axhline(0.5, color='#718096', linestyle='--', linewidth=1, alpha=0.6, label='Decision Boundary (0.5)')
+    ax2.scatter(user_val, pred_log_prob, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Input')
+    ax2.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
+    
+    ax2.set_xlabel('Money')
+    ax2.set_ylabel('Probability')
+    ax2.set_ylim(-

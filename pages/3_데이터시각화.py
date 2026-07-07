@@ -38,12 +38,8 @@ def load_raw_data():
         # 기본 독립변수 (베팅 금액)
         money = np.random.uniform(50, 500, n)
         
-        # [수정 포인트] 뚜렷한 상관관계를 만들기 위한 선형 연산식 도입
-        # 1) 양의 상관관계 시나리오 (Money가 커질수록 Outpay도 커짐)
+        # 양의 상관관계 시나리오 (Money가 커질수록 Outpay도 커짐)
         base_outpay = money * 0.85 
-        
-        # 2) 음의 상관관계 시나리오를 원하시면 아래 한 줄 주석을 해제하고 위 줄을 주석 처리하세요.
-        # base_outpay = 500 - (money * 0.85)
         
         # 현실감을 위한 노이즈(변동성) 추가
         noise = np.random.normal(0, 40, n)
@@ -123,7 +119,6 @@ h_col1, h_col2 = st.columns(2)
 corr_raw = df_raw[features].corr()
 corr_clean = df_clean[features].corr()
 
-# 깨짐 방지를 위해 깔끔한 대문자 영문으로 전면 교체
 clean_labels = ['Gamers', 'Skins', 'Money', 'Ticks', 'Outpay']
 
 with h_col1:
@@ -133,6 +128,7 @@ with h_col1:
     ax_h1.set_facecolor('#111625')
     sns.heatmap(corr_raw, annot=True, cmap='vlag', fmt=".2f", ax=ax_h1, cbar=False, vmin=-1, vmax=1, xticklabels=clean_labels, yticklabels=clean_labels)
     st.pyplot(fig_h1)
+    plt.close(fig_h1)  # 메모리 해제
 
 with h_col2:
     st.markdown("##### [Clean] 정제 후 상관성")
@@ -141,10 +137,11 @@ with h_col2:
     ax_h2.set_facecolor('#111625')
     sns.heatmap(corr_clean, annot=True, cmap='vlag', fmt=".2f", ax=ax_h2, cbar=False, vmin=-1, vmax=1, xticklabels=clean_labels, yticklabels=clean_labels)
     st.pyplot(fig_h2)
+    plt.close(fig_h2)  # 메모리 해제
 
 st.markdown("---")
 
-# ==================== GRAPH 2. 분포 박스플롯 ====================
+# ==================== GRAPH 2. 분포 박스플롯 (수정 완료) ====================
 st.markdown("#### 📦 2. 주요 데이터 수치 범위 분포")
 b_col1, b_col2 = st.columns(2)
 box_features = ['money', 'outpay']
@@ -154,26 +151,31 @@ with b_col1:
     fig_b1, ax_b1 = plt.subplots(figsize=(6, 3.8))
     fig_b1.patch.set_facecolor('#0E1117')
     ax_b1.set_facecolor('#111625')
+    
+    # 데이터 안정적 매핑을 위해 객체 지향형(ax=ax_b1)으로 변경 및 명시적 컬럼 전달
     sns.boxplot(data=df_raw[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b1)
     
-    plt.sca(ax_b1)
-    plt.xticks([0, 1], ['Money', 'Outpay'])
-    plt.ylabel("Value Range")
+    # plt.sca 방식을 배제하고 ax 객체를 직접 제어하여 렌더링 오류 방지
+    ax_b1.set_xticklabels(['Money', 'Outpay'])
+    ax_b1.set_ylabel("Value Range")
     ax_b1.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     st.pyplot(fig_b1)
+    plt.close(fig_b1)
 
 with b_col2:
     st.markdown("##### [Clean] 경계선 실시간 조절")
     fig_b2, ax_b2 = plt.subplots(figsize=(6, 3.8))
     fig_b2.patch.set_facecolor('#0E1117')
     ax_b2.set_facecolor('#111625')
+    
+    # 정제 데이터 박스플롯 생성
     sns.boxplot(data=df_clean[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b2)
     
-    plt.sca(ax_b2)
-    plt.xticks([0, 1], ['Money', 'Outpay'])
-    plt.ylabel("Value Range")
+    ax_b2.set_xticklabels(['Money', 'Outpay'])
+    ax_b2.set_ylabel("Value Range")
     ax_b2.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     st.pyplot(fig_b2)
+    plt.close(fig_b2)
 
 st.markdown("---")
 
@@ -187,19 +189,44 @@ with s_col1:
     fig_s.patch.set_facecolor('#0E1117')
     ax_s.set_facecolor('#111625')
     
-    # 원본 데이터(이상치 포함) 플롯
     ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.4, label='Outliers', s=35)
-    # 정제 데이터 플롯
     ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.8, label='Cleaned', s=20)
     
-    plt.sca(ax_s)
-    plt.xlabel('Money')
-    plt.ylabel('Outpay')
+    ax_s.set_xlabel('Money')
+    ax_s.set_ylabel('Outpay')
     ax_s.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
     ax_s.legend(facecolor='#111625', edgecolor='#232D42')
     st.pyplot(fig_s)
+    plt.close(fig_s)
 
 with s_col2:
     st.markdown("##### 📊 규모별 평균 환급 비교")
     
     df_raw_bar = df_raw.copy()
+    df_clean_bar = df_clean.copy()
+    
+    group_labels = ['Low', 'Medium', 'High']
+    df_raw_bar['group'] = pd.qcut(df_raw_bar['money'], q=3, labels=group_labels)
+    
+    try:
+        df_clean_bar['group'] = pd.qcut(df_clean_bar['money'], q=3, labels=group_labels)
+    except:
+        df_clean_bar['group'] = pd.cut(df_clean_bar['money'], bins=3, labels=group_labels)
+    
+    raw_mean = df_raw_bar.groupby('group', observed=False)['outpay'].mean()
+    clean_mean = df_clean_bar.groupby('group', observed=False)['outpay'].mean()
+    
+    bar_df = pd.DataFrame({'Raw Mean': raw_mean, 'Clean Mean': clean_mean})
+    
+    fig_bar, ax_bar = plt.subplots(figsize=(6, 4.2))
+    fig_bar.patch.set_facecolor('#0E1117')
+    ax_bar.set_facecolor('#111625')
+    
+    bar_df.plot(kind='bar', color=['#4A5568', '#00E5FF'], ax=ax_bar, rot=0)
+    
+    ax_bar.set_xlabel('Betting Groups')
+    ax_bar.set_ylabel('Average Outpay')
+    ax_bar.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
+    ax_bar.legend(facecolor='#111625', edgecolor='#232D42')
+    st.pyplot(fig_bar)
+    plt.close(fig_bar)

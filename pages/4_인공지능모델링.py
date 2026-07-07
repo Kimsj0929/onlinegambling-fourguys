@@ -10,23 +10,24 @@ from sklearn.metrics import mean_squared_error, accuracy_score
 # 1. 글로벌 레이아웃 설정
 st.set_page_config(page_title="NEXUS Quantum AI Modeling", layout="wide")
 
-# CSS 주입 (안전한 표준 문자열 변환 적용)
-css_style = """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
-html, body, [data-testid="stMarkdownContainer"] {
-    font-family: 'Noto Sans KR', sans-serif;
-}
-.main-title { font-size: 2.2rem; font-weight: 700; color: #FFFFFF; margin-bottom: 0.5rem; }
-.sub-title { font-size: 1rem; color: #8A99AD; margin-bottom: 2rem; }
-.section-header { margin-top: 1rem; margin-bottom: 1.5rem; color: #00E5FF; font-weight: 700; border-left: 5px solid #FF2E93; padding-left: 1rem; }
-.metric-card { background-color: #111625; border: 1px solid #232D42; border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }
-.metric-label { font-size: 0.8rem; color: #6C7D93; font-weight: 700; text-transform: uppercase; }
-.metric-value { font-size: 1.8rem; color: #FFFFFF; font-family: 'JetBrains Mono', monospace; }
-.sub-value { font-size: 1.1rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; margin-top: 0.2rem; }
-</style>
-"""
-st.markdown(css_style, unsafe_allow_html=True)
+# CSS 주입 (매직 파서 우회를 위해 함수화 처리 및 특수 기호 마스킹)
+def inject_custom_css():
+    css_content = (
+        "<style>"
+        "@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');"
+        "html, body, [data-testid='stMarkdownContainer'] { font-family: 'Noto Sans KR', sans-serif; }"
+        ".main-title { font-size: 2.2rem; font-weight: 700; color: #FFFFFF; margin-bottom: 0.5rem; }"
+        ".sub-title { font-size: 1rem; color: #8A99AD; margin-bottom: 2rem; }"
+        ".section-header { margin-top: 1rem; margin-bottom: 1.5rem; color: #00E5FF; font-weight: 700; border-left: 5px solid #FF2E93; padding-left: 1rem; }"
+        ".metric-card { background-color: #111625; border: 1px solid #232D42; border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }"
+        ".metric-label { font-size: 0.8rem; color: #6C7D93; font-weight: 700; text-transform: uppercase; }"
+        ".metric-value { font-size: 1.8rem; color: #FFFFFF; font-family: 'JetBrains Mono', monospace; }"
+        ".sub-value { font-size: 1.1rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; margin-top: 0.2rem; }"
+        "</style>"
+    )
+    st.markdown(css_content, unsafe_allow_html=True)
+
+inject_custom_css()
 
 # 헤더 영역
 st.markdown('<div class="main-title">🌌 NEXUS Quantum AI Modeling</div>', unsafe_allow_html=True)
@@ -63,7 +64,7 @@ min_x = float(X.min())
 max_x = float(X.max())
 mean_x = float(X.mean())
 
-# 컨트롤 슬라이더 레이블 한글화 및 내부 변수 영어 유지
+# 컨트롤 슬라이더
 user_val = st.slider("입력 데이터 제어 범위 설정: Money (Betting Amount)", min_x, max_x, mean_x, step=0.1)
 
 # 실시간 분석 추론 연산
@@ -75,28 +76,31 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ==================== 두 파트로 분리된 스코어 및 평가지표 메트릭 ====================
 p_col1, p_col2 = st.columns(2)
 
-# 구문 분석 충돌(SyntaxError) 우려가 있는 복합 컴포넌트 결합을 단순 문자열 더하기 방식으로 우회 처리
 val_lin = f"{pred_lin:.4f}"
 val_mse = f"{mse:.4f}"
 val_prob = f"{pred_log_prob * 100:.2f}"
 val_acc = f"{acc * 100:.1f}"
 
 with p_col1:
-    html_lin = '<div class="metric-card">'
-    html_lin += '<div class="metric-label">Linear Regression Output</div>'
-    html_lin += '<div class="metric-value" style="color: #FF2E93;">' + val_lin + '</div>'
-    html_lin += '<div class="sub-value" style="color: #FF8DA1;">Model Error (MSE): ' + val_mse + '</div>'
-    html_lin += '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* Predicts continuous numerical points; evaluated via Mean Squared Error (closer to 0 is better).</div>'
-    html_lin += '</div>'
+    html_lin = (
+        '<div class="metric-card">'
+        '<div class="metric-label">Linear Regression Output</div>'
+        f'<div class="metric-value" style="color: #FF2E93;">{val_lin}</div>'
+        f'<div class="sub-value" style="color: #FF8DA1;">Model Error (MSE): {val_mse}</div>'
+        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* Predicts continuous numerical points; evaluated via Mean Squared Error (closer to 0 is better).</div>'
+        '</div>'
+    )
     st.markdown(html_lin, unsafe_allow_html=True)
 
 with p_col2:
-    html_log = '<div class="metric-card">'
-    html_log += '<div class="metric-label">Logistic Regression Probability</div>'
-    html_log += '<div class="metric-value" style="color: #00E5FF;">' + val_prob + '%</div>'
-    html_log += '<div class="sub-value" style="color: #80F2FF;">Model Accuracy: ' + val_acc + '%</div>'
-    html_log += '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* Classifies success probability; evaluated via Accuracy Score (closer to 100% is better).</div>'
-    html_log += '</div>'
+    html_log = (
+        '<div class="metric-card">'
+        '<div class="metric-label">Logistic Regression Probability</div>'
+        f'<div class="metric-value" style="color: #00E5FF;">{val_prob}%</div>'
+        f'<div class="sub-value" style="color: #80F2FF;">Model Accuracy: {val_acc}%</div>'
+        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* Classifies success probability; evaluated via Accuracy Score (closer to 100% is better).</div>'
+        '</div>'
+    )
     st.markdown(html_log, unsafe_allow_html=True)
 
 # ==================== AI 시각화 그래픽스 엔진 ====================
@@ -119,4 +123,9 @@ col_g1, col_g2 = st.columns(2)
 with col_g1:
     st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
     fig1, ax1 = plt.subplots(figsize=(7, 3.8))
-    fig1.patch.set_facecolor('#0E1
+    fig1.patch.set_facecolor('#0E1117')
+    ax1.set_facecolor('#111625')
+    
+    ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
+    ax1.plot(X_range, lin_model.predict(X_range), color='#FF2E93', linewidth=2.5, label='Linear Trend Line', zorder=3)
+    ax1.scatter(user_val, pred_lin, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Input')

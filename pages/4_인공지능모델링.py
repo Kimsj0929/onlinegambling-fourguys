@@ -6,7 +6,7 @@ import seaborn as sns
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, accuracy_score
+from sklearn.metrics import mean_absolute_error, accuracy_score
 
 # 1. 글로벌 레이아웃 설정
 st.set_page_config(page_title="NEXUS Quantum AI Modeling", layout="wide")
@@ -63,8 +63,8 @@ lin_model = LinearRegression().fit(X_train, y_train)
 log_model = LogisticRegression().fit(X_train, y_train)
 rf_model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42).fit(X_train, y_train)
 
-# 평가지표 산출
-mse = mean_squared_error(y_test, lin_model.predict(X_test))
+# 평가지표 산출 (MSE에서 MAE로 변경)
+mae = mean_absolute_error(y_test, lin_model.predict(X_test))
 acc_log = accuracy_score(y_test, log_model.predict(X_test))
 acc_rf = accuracy_score(y_test, rf_model.predict(X_test))
 
@@ -85,181 +85,4 @@ pred_rf_prob = rf_model.predict_proba([[user_val]])[0][1]
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ==================== 세 파트로 분리된 스코어 및 평가지표 메트릭 ====================
-p_col1, p_col2, p_col3 = st.columns(3)
-
-val_lin = f"{pred_lin:.4f}"
-val_mse = f"{mse:.4f}"
-val_log_prob = f"{pred_log_prob * 100:.2f}"
-val_acc_log = f"{acc_log * 100:.1f}"
-val_rf_prob = f"{pred_rf_prob * 100:.2f}"
-val_acc_rf = f"{acc_rf * 100:.1f}"
-
-# 매직 파서 우회를 위해 미리 문자열 결합 처리
-str_lin_mse = "Model Error (MSE): " + val_mse
-str_log_acc = "Model Accuracy: " + val_acc_log + "%"
-str_log_prob = val_log_prob + "%"
-str_rf_acc = "Model Accuracy: " + val_acc_rf + "%"
-str_rf_prob = val_rf_prob + "%"
-
-with p_col1:
-    html_lin = (
-        '<div class="metric-card">'
-        '<div class="metric-label">Linear Regression Output</div>'
-        '<div class="metric-value" style="color: #FF2E93;">' + val_lin + '</div>'
-        '<div class="sub-value" style="color: #FF8DA1;">' + str_lin_mse + '</div>'
-        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 연속 수치 예측 결과값; 상하한선 경계가 없음.</div>'
-        '</div>'
-    )
-    st.markdown(html_lin, unsafe_allow_html=True)
-
-with p_col2:
-    html_log = (
-        '<div class="metric-card">'
-        '<div class="metric-label">Logistic Regression Probability</div>'
-        '<div class="metric-value" style="color: #00E5FF;">' + str_log_prob + '</div>'
-        '<div class="sub-value" style="color: #80F2FF;">' + str_log_acc + '</div>'
-        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 통계적 시그모이드 기반 위험 확률 추정값.</div>'
-        '</div>'
-    )
-    st.markdown(html_log, unsafe_allow_html=True)
-
-with p_col3:
-    html_rf = (
-        '<div class="metric-card">'
-        '<div class="metric-label">Random Forest Probability</div>'
-        '<div class="metric-value" style="color: #FFD700;">' + str_rf_prob + '</div>'
-        '<div class="sub-value" style="color: #FFE680;">' + str_rf_acc + '</div>'
-        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 머신러닝 의사결정나무 앙상블 기반 위험 확률 추정값.</div>'
-        '</div>'
-    )
-    st.markdown(html_rf, unsafe_allow_html=True)
-
-# ==================== AI 시각화 그래픽스 엔진 ====================
-X_range = np.linspace(min_x, max_x, 500).reshape(-1, 1)
-
-plt.style.use('dark_background')
-plt.rcParams.update({
-    'font.family': 'sans-serif',
-    'font.sans-serif': ['DejaVu Sans', 'Arial', 'Helvetica', 'Liberation Sans'],
-    'text.color': '#8A99AD', 
-    'axes.labelcolor': '#8A99AD',
-    'xtick.color': '#4A5568',
-    'ytick.color': '#4A5568'
-})
-
-# --- 첫 번째 행: 선형 회귀와 로지스틱 회귀 그래프를 좌우로 나란히 배치 ---
-col_g1, col_g2 = st.columns(2)
-
-with col_g1:
-    st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
-    fig1, ax1 = plt.subplots(figsize=(7, 3.8))
-    fig1.patch.set_facecolor('#0E1117')
-    ax1.set_facecolor('#111625')
-    
-    ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
-    ax1.plot(X_range, lin_model.predict(X_range), color='#FF2E93', linewidth=2.5, label='Linear Trend Line', zorder=3)
-    ax1.scatter(user_val, pred_lin, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Input')
-    ax1.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
-    
-    ax1.set_xlabel('Money')
-    ax1.set_ylabel('Predicted Value')
-    ax1.set_ylim(-0.3, 1.3)
-    ax1.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-    ax1.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-    st.pyplot(fig1)
-    plt.close(fig1)
-
-with col_g2:
-    st.markdown("#### 📈 로지스틱 회귀 시그모이드(Sigmoid) 위험 확률 곡선")
-    fig2, ax2 = plt.subplots(figsize=(7, 3.8))
-    fig2.patch.set_facecolor('#0E1117')
-    ax2.set_facecolor('#111625')
-    
-    ax2.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
-    ax2.plot(X_range, log_model.predict_proba(X_range)[:, 1], color='#00E5FF', linewidth=2.5, label='Logistic Curve', zorder=3)
-    ax2.axhline(0.5, color='#718096', linestyle='--', linewidth=1, alpha=0.6, label='Decision Boundary (0.5)')
-    ax2.scatter(user_val, pred_log_prob, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Prob')
-    ax2.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
-    
-    ax2.set_xlabel('Money')
-    ax2.set_ylabel('Gambling Risk Probability')
-    ax2.set_ylim(-0.1, 1.1)
-    ax2.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-    ax2.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-    st.pyplot(fig2)
-    plt.close(fig2)
-
-# --- 두 번째 행: 심층 오차 분석 및 타겟 분포 밀도 ---
-col_g3, col_g4 = st.columns(2)
-
-with col_g3:
-    st.markdown("#### 🔍 선형 예측 오차 분석 (Residuals Scatter Plot)")
-    fig3, ax3 = plt.subplots(figsize=(7, 3.8))
-    fig3.patch.set_facecolor('#0E1117')
-    ax3.set_facecolor('#111625')
-    
-    y_res_pred = lin_model.predict(X_test)
-    residuals = y_test - y_res_pred
-    
-    ax3.scatter(X_test, residuals, color='#FF2E93', alpha=0.5, s=25, label='Residual Points')
-    ax3.axhline(0, color='#FFFFFF', linestyle='-', linewidth=1, alpha=0.4)
-    ax3.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5)
-    
-    ax3.set_xlabel('Money')
-    ax3.set_ylabel('Residual Error')
-    ax3.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-    ax3.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-    st.pyplot(fig3)
-    plt.close(fig3)
-
-with col_g4:
-    st.markdown("#### 📊 타겟 클래스별 데이터 분포 밀도 (Density Topology Plot)")
-    fig4, ax4 = plt.subplots(figsize=(7, 3.8))
-    fig4.patch.set_facecolor('#0E1117')
-    ax4.set_facecolor('#111625')
-    
-    df_t0 = df[df['target'] == 0]
-    df_t1 = df[df['target'] == 1]
-    
-    sns.kdeplot(data=df_t0, x='money', fill=True, color='#FF2E93', alpha=0.3, label='Target 0', ax=ax4)
-    sns.kdeplot(data=df_t1, x='money', fill=True, color='#00E5FF', alpha=0.3, label='Target 1', ax=ax4)
-    ax4.axvline(user_val, color='#FFD700', linestyle='-', linewidth=1.5, label='User Input Point')
-    
-    ax4.set_xlabel('Money')
-    ax4.set_ylabel('Density')
-    ax4.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-    ax4.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-    st.pyplot(fig4)
-    plt.close(fig4)
-
-# ==================== 요약 성능 리포트 (이해하기 쉬운 지표 패치 적용) ====================
-st.markdown("<br>", unsafe_allow_html=True)
-st.markdown("### ⚖️ AI 모델별 종합 성능 검증 리포트")
-
-score_lin = "틀린 크기(오차): " + val_mse
-score_log = "예측 성공률(정확도): " + val_acc_log + "%"
-score_rf = "예측 성공률(정확도): " + val_acc_rf + "%"
-
-summary_matrix = pd.DataFrame({
-    "쉽게 보는 모델 비교": ["예측 방식", "예측 결과의 형태", "도박 위험군 분석에 적합한가?", "모델의 최종 성적"],
-    "모델 01: 선형 회귀 (Linear)": [
-        "지속적으로 변하는 숫자의 추세를 직선으로 예측",
-        "음수나 100을 넘는 숫자도 나옴 (제한 없음)",
-        "부적합 (위험이다/아니다를 나누기엔 선이 비틀어짐)",
-        score_lin
-    ],
-    "모델 02: 로지스틱 회귀 (Logistic)": [
-        "사건이 일어날 확률을 S자 곡선(0~100%)으로 예측",
-        "0%에서 100% 사이의 확률로만 깔끔하게 떨어짐",
-        "매우 적합 (위험군이 될 확률을 부드럽게 추정함)",
-        score_log
-    ],
-    "모델 03: 랜덤 포레스트 (Random Forest)": [
-        "여러 개의 AI 나무들이 투표를 통해 최종 결론을 도출",
-        "투표 결과에 따른 안전/위험군 확률로 표현됨",
-        "가장 우수 (청소년들의 복잡한 행동 패턴을 조각조각 잘 포착함)",
-        score_rf
-    ]
-})
-
-st.table(summary_matrix.set_index("쉽게 보는 모델 비교"))
+p_col1, p_col

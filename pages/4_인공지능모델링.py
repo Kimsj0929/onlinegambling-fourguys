@@ -11,13 +11,13 @@ from sklearn.metrics import mean_squared_error, accuracy_score
 # 1. 글로벌 레이아웃 설정
 st.set_page_config(page_title="NEXUS Quantum AI Modeling", layout="wide")
 
-# CSS 주입 (메인 타이틀 색상을 어두운 블랙/차콜 계열로 변경)
+# CSS 주입 (메인 타이틀 색상을 어두운 블랙/차콜 계열로 설정)
 def inject_custom_css():
     css_content = (
         "<style>"
         "@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');"
         "html, body, [data-testid='stMarkdownContainer'] { font-family: 'Noto Sans KR', sans-serif; }"
-        ".main-title { font-size: 2.2rem; font-weight: 700; color: #111625; margin-bottom: 0.5rem; }"  # <--- 이 부분의 color를 어두운 색상으로 변경했습니다!
+        ".main-title { font-size: 2.2rem; font-weight: 700; color: #111625; margin-bottom: 0.5rem; }"
         ".sub-title { font-size: 1rem; color: #8A99AD; margin-bottom: 2rem; }"
         ".section-header { margin-top: 1rem; margin-bottom: 1.5rem; color: #00E5FF; font-weight: 700; border-left: 5px solid #FF2E93; padding-left: 1rem; }"
         ".metric-card { background-color: #111625; border: 1px solid #232D42; border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }"
@@ -58,7 +58,7 @@ y = df['target'].values
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 모델 생성 및 훈련 (선형, 로지스틱, 랜덤 포레스트 3대 모델 탑재)
+# 모델 생성 및 훈련
 lin_model = LinearRegression().fit(X_train, y_train)
 log_model = LogisticRegression().fit(X_train, y_train)
 rf_model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42).fit(X_train, y_train)
@@ -147,9 +147,9 @@ plt.rcParams.update({
     'ytick.color': '#4A5568'
 })
 
-# --- 첫 번째 그래프 행 (선형 회귀 그래프만 단독 배치) ---
+# --- 첫 번째 그래프 행 (선형 회귀 그래프 단독 배치) ---
 st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
-fig1, ax1 = plt.subplots(figsize=(14, 4))
+fig1, ax1 = plt.subplots(figsize=(14, 3.5))
 fig1.patch.set_facecolor('#0E1117')
 ax1.set_facecolor('#111625')
 
@@ -166,12 +166,32 @@ ax1.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
 st.pyplot(fig1)
 plt.close(fig1)
 
-# --- 두 번째 그래프 행 (심층 오차 분석 및 타겟 분포 밀도 유지) ---
+# --- 두 번째 그래프 행 (새로 추가된 로지스틱 회귀 시그모이드 확률 곡선 그래프) ---
+st.markdown("#### 📈 로지스틱 회귀 시그모이드(Sigmoid) 위험 확률 곡선")
+fig2, ax2 = plt.subplots(figsize=(14, 3.5))
+fig2.patch.set_facecolor('#0E1117')
+ax2.set_facecolor('#111625')
+
+ax2.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
+ax2.plot(X_range, log_model.predict_proba(X_range)[:, 1], color='#00E5FF', linewidth=2.5, label='Logistic Probability Curve', zorder=3)
+ax2.axhline(0.5, color='#718096', linestyle='--', linewidth=1, alpha=0.6, label='Decision Boundary (0.5)')
+ax2.scatter(user_val, pred_log_prob, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Probability')
+ax2.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
+
+ax2.set_xlabel('Money')
+ax2.set_ylabel('Gambling Risk Probability')
+ax2.set_ylim(-0.1, 1.1)
+ax2.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
+ax2.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
+st.pyplot(fig2)
+plt.close(fig2)
+
+# --- 세 번째 그래프 행 (심층 오차 분석 및 타겟 분포 밀도) ---
 col_g3, col_g4 = st.columns(2)
 
 with col_g3:
     st.markdown("#### 🔍 선형 예측 오차 분석 (Residuals Scatter Plot)")
-    fig3, ax3 = plt.subplots(figsize=(7, 3.8))
+    fig3, ax3 = plt.subplots(figsize=(7, 3.5))
     fig3.patch.set_facecolor('#0E1117')
     ax3.set_facecolor('#111625')
     
@@ -191,7 +211,7 @@ with col_g3:
 
 with col_g4:
     st.markdown("#### 📊 타겟 클래스별 데이터 분포 밀도 (Density Topology Plot)")
-    fig4, ax4 = plt.subplots(figsize=(7, 3.8))
+    fig4, ax4 = plt.subplots(figsize=(7, 3.5))
     fig4.patch.set_facecolor('#0E1117')
     ax4.set_facecolor('#111625')
     

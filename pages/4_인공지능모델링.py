@@ -63,7 +63,7 @@ lin_model = LinearRegression().fit(X_train, y_train)
 log_model = LogisticRegression().fit(X_train, y_train)
 rf_model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42).fit(X_train, y_train)
 
-# 평가지표 산출 (MSE에서 MAE로 변경)
+# 평가지표 산출 (MAE 적용)
 mae = mean_absolute_error(y_test, lin_model.predict(X_test))
 acc_log = accuracy_score(y_test, log_model.predict(X_test))
 acc_rf = accuracy_score(y_test, rf_model.predict(X_test))
@@ -85,4 +85,38 @@ pred_rf_prob = rf_model.predict_proba([[user_val]])[0][1]
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ==================== 세 파트로 분리된 스코어 및 평가지표 메트릭 ====================
-p_col1, p_col
+# [수정 포인트] 잘려있던 변수 선언 부분을 정상적으로 3개의 컬럼으로 매칭시켰습니다.
+p_col1, p_col2, p_col3 = st.columns(3)
+
+val_lin = f"{pred_lin:.4f}"
+val_mae = f"{mae:.4f}"
+val_log_prob = f"{pred_log_prob * 100:.2f}"
+val_acc_log = f"{acc_log * 100:.1f}"
+val_rf_prob = f"{pred_rf_prob * 100:.2f}"
+val_acc_rf = f"{acc_rf * 100:.1f}"
+
+# 매직 파서 우회를 위해 미리 문자열 결합 처리
+str_lin_mae = "Model Error (MAE): " + val_mae
+str_log_acc = "Model Accuracy: " + val_acc_log + "%"
+str_log_prob = val_log_prob + "%"
+str_rf_acc = "Model Accuracy: " + val_acc_rf + "%"
+str_rf_prob = val_rf_prob + "%"
+
+with p_col1:
+    html_lin = (
+        '<div class="metric-card">'
+        '<div class="metric-label">Linear Regression Output</div>'
+        '<div class="metric-value" style="color: #FF2E93;">' + val_lin + '</div>'
+        '<div class="sub-value" style="color: #FF8DA1;">' + str_lin_mae + '</div>'
+        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 연속 수치 예측 결과값; 상하한선 경계가 없음.</div>'
+        '</div>'
+    )
+    st.markdown(html_lin, unsafe_allow_html=True)
+
+with p_col2:
+    html_log = (
+        '<div class="metric-card">'
+        '<div class="metric-label">Logistic Regression Probability</div>'
+        '<div class="metric-value" style="color: #00E5FF;">' + str_log_prob + '</div>'
+        '<div class="sub-value" style="color: #80F2FF;">' + str_log_acc + '</div>'
+        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">

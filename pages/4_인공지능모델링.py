@@ -147,52 +147,26 @@ plt.rcParams.update({
     'ytick.color': '#4A5568'
 })
 
-col_g1, col_g2 = st.columns(2)
+# --- 첫 번째 그래프 행 (선형 회귀 그래프만 단독 배치) ---
+st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
+fig1, ax1 = plt.subplots(figsize=(14, 4)) # 와이드 레이아웃에 맞게 가로 폭 확장
+fig1.patch.set_facecolor('#0E1117')
+ax1.set_facecolor('#111625')
 
-with col_g1:
-    st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
-    fig1, ax1 = plt.subplots(figsize=(7, 3.8))
-    fig1.patch.set_facecolor('#0E1117')
-    ax1.set_facecolor('#111625')
-    
-    ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
-    ax1.plot(X_range, lin_model.predict(X_range), color='#FF2E93', linewidth=2.5, label='Linear Trend Line', zorder=3)
-    ax1.scatter(user_val, pred_lin, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Input')
-    ax1.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
-    
-    ax1.set_xlabel('Money')
-    ax1.set_ylabel('Predicted Value')
-    ax1.set_ylim(-0.3, 1.3)
-    ax1.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-    ax1.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-    st.pyplot(fig1)
-    plt.close(fig1)
+ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
+ax1.plot(X_range, lin_model.predict(X_range), color='#FF2E93', linewidth=2.5, label='Linear Trend Line', zorder=3)
+ax1.scatter(user_val, pred_lin, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Input')
+ax1.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
 
-with col_g2:
-    st.markdown("#### 📈 로지스틱 & 랜덤 포레스트 확률 곡선 실시간 비교")
-    fig2, ax2 = plt.subplots(figsize=(7, 3.8))
-    fig2.patch.set_facecolor('#0E1117')
-    ax2.set_facecolor('#111625')
-    
-    ax2.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
-    ax2.plot(X_range, log_model.predict_proba(X_range)[:, 1], color='#00E5FF', linewidth=2.5, label='Logistic Sigmoid', zorder=3)
-    ax2.plot(X_range, rf_model.predict_proba(X_range)[:, 1], color='#FFD700', linewidth=2, linestyle='--', label='Random Forest Prob', zorder=4)
-    
-    ax2.axhline(0.5, color='#718096', linestyle='--', linewidth=1, alpha=0.6, label='Decision Boundary (0.5)')
-    
-    ax2.scatter(user_val, pred_log_prob, color='#00E5FF', edgecolor='#FFFFFF', s=120, marker='o', zorder=5, label='Logistic Live')
-    ax2.scatter(user_val, pred_rf_prob, color='#FFD700', edgecolor='#FFFFFF', s=120, marker='s', zorder=5, label='Random Forest Live')
-    ax2.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
-    
-    ax2.set_xlabel('Money')
-    ax2.set_ylabel('Probability')
-    ax2.set_ylim(-0.1, 1.1)
-    ax2.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-    ax2.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-    st.pyplot(fig2)
-    plt.close(fig2)
+ax1.set_xlabel('Money')
+ax1.set_ylabel('Predicted Value')
+ax1.set_ylim(-0.3, 1.3)
+ax1.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
+ax1.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
+st.pyplot(fig1)
+plt.close(fig1)
 
-# --- 두 번째 그래프 행 (심층 오차 및 분포) ---
+# --- 두 번째 그래프 행 (심층 오차 분석 및 타겟 분포 밀도 유지) ---
 col_g3, col_g4 = st.columns(2)
 
 with col_g3:

@@ -9,7 +9,7 @@ from sklearn.metrics import mean_squared_error, accuracy_score
 # 1. 글로벌 레이아웃 설정
 st.set_page_config(page_title="NEXUS Quantum AI Modeling", layout="wide")
 
-# CSS 주입 (매직 파서 우회를 위해 함수화 처리 및 특수 기호 마스킹)
+# CSS 주입 (매직 파서 충돌을 예방하기 위해 모든 기호를 완전 분리)
 def inject_custom_css():
     css_content = (
         "<style>"
@@ -80,18 +80,14 @@ val_mse = f"{mse:.4f}"
 val_prob = f"{pred_log_prob * 100:.2f}"
 val_acc = f"{acc * 100:.1f}"
 
+# 출력 데이터의 충돌을 예방하기 위해 f-string 대신 고정형 포맷으로 사전 문자열 빌드
+str_lin_mse = "Model Error (MSE): " + val_mse
+str_log_acc = "Model Accuracy: " + val_acc + "%"
+str_log_prob = val_prob + "%"
+
 with p_col1:
     html_lin = (
         '<div class="metric-card">'
         '<div class="metric-label">Linear Regression Output</div>'
-        f'<div class="metric-value" style="color: #FF2E93;">{val_lin}</div>'
-        f'<div class="sub-value" style="color: #FF8DA1;">Model Error (MSE): {val_mse}</div>'
-        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* Predicts continuous numerical points; evaluated via Mean Squared Error (closer to 0 is better).</div>'
-        '</div>'
-    )
-    st.markdown(html_lin, unsafe_allow_html=True)
-
-with p_col2:
-    html_log = (
-        '<div class="metric-card">'
-        '<div
+        '<div class="metric-value" style="color: #FF2E93;">' + val_lin + '</div>'
+        '<div class="sub-value" style="color: #FF8DA1;">'

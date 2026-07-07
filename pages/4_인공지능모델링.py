@@ -31,7 +31,7 @@ inject_custom_css()
 
 # 헤더 영역
 st.markdown('<div class="main-title">🌌 NEXUS Quantum AI Modeling</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Comparative Analysis Simulator: Linear Regression Line vs. Logistic Sigmoid Curve Topology</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title"> 선형 회귀 VS 로지스틱 회귀</div>', unsafe_allow_html=True)
 
 # 2. 데이터 세트 자립형 생성 엔진
 @st.cache_data

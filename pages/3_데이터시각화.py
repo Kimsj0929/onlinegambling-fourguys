@@ -141,7 +141,7 @@ with h_col2:
 
 st.markdown("---")
 
-# ==================== GRAPH 2. 분포 박스플롯 (수정 완료) ====================
+# ==================== GRAPH 2. 분포 박스플롯 ====================
 st.markdown("#### 📦 2. 주요 데이터 수치 범위 분포")
 b_col1, b_col2 = st.columns(2)
 box_features = ['money', 'outpay']
@@ -152,10 +152,8 @@ with b_col1:
     fig_b1.patch.set_facecolor('#0E1117')
     ax_b1.set_facecolor('#111625')
     
-    # 데이터 안정적 매핑을 위해 객체 지향형(ax=ax_b1)으로 변경 및 명시적 컬럼 전달
     sns.boxplot(data=df_raw[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b1)
     
-    # plt.sca 방식을 배제하고 ax 객체를 직접 제어하여 렌더링 오류 방지
     ax_b1.set_xticklabels(['Money', 'Outpay'])
     ax_b1.set_ylabel("Value Range")
     ax_b1.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
@@ -168,7 +166,6 @@ with b_col2:
     fig_b2.patch.set_facecolor('#0E1117')
     ax_b2.set_facecolor('#111625')
     
-    # 정제 데이터 박스플롯 생성
     sns.boxplot(data=df_clean[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b2)
     
     ax_b2.set_xticklabels(['Money', 'Outpay'])
@@ -179,7 +176,7 @@ with b_col2:
 
 st.markdown("---")
 
-# ==================== GRAPH 3. 산점도 및 바 차트 ====================
+# ==================== GRAPH 3. 산점도 및 바 차트 (산점도 수정본 적용) ====================
 st.markdown("#### 🎯 3. 데이터 분포 형태 및 등급별 평균 환급 구조")
 s_col1, s_col2 = st.columns(2)
 
@@ -189,8 +186,17 @@ with s_col1:
     fig_s.patch.set_facecolor('#0E1117')
     ax_s.set_facecolor('#111625')
     
-    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.4, label='Outliers', s=35)
-    ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.8, label='Cleaned', s=20)
+    # 1. 원본 데이터 (이상치가 넓게 펼쳐진 투명한 붉은 점)
+    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.3, label='Outliers', s=35)
+    
+    # 2. 정제 데이터 (정상 구역에 모여있는 선명한 녹색 점)
+    ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.9, label='Cleaned', s=25)
+    
+    # [핵심] Y축 범위를 정제 완료 데이터 기준으로 자동 한계 제어하여 우상향 경향성을 극대화함
+    if not df_clean.empty:
+        y_min = df_clean['outpay'].min() - 50
+        y_max = df_clean['outpay'].max() + 50
+        ax_s.set_ylim(y_min, y_max)
     
     ax_s.set_xlabel('Money')
     ax_s.set_ylabel('Outpay')

@@ -11,13 +11,13 @@ from sklearn.metrics import mean_squared_error, accuracy_score
 # 1. 글로벌 레이아웃 설정
 st.set_page_config(page_title="NEXUS Quantum AI Modeling", layout="wide")
 
-# CSS 주입 (매직 파서 충돌 예방을 위한 완전 이스케이프 구조)
+# CSS 주입 (제목 색상을 경각심을 주는 #FF2E93로 명시적 변경)
 def inject_custom_css():
     css_content = (
         "<style>"
         "@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');"
         "html, body, [data-testid='stMarkdownContainer'] { font-family: 'Noto Sans KR', sans-serif; }"
-        ".main-title { font-size: 2.2rem; font-weight: 700; color: #FFFFFF; margin-bottom: 0.5rem; }"
+        ".main-title { font-size: 2.2rem; font-weight: 700; color: #FF2E93; margin-bottom: 0.5rem; }"  # <--- 이 부분의 color를 변경했습니다!
         ".sub-title { font-size: 1rem; color: #8A99AD; margin-bottom: 2rem; }"
         ".section-header { margin-top: 1rem; margin-bottom: 1.5rem; color: #00E5FF; font-weight: 700; border-left: 5px solid #FF2E93; padding-left: 1rem; }"
         ".metric-card { background-color: #111625; border: 1px solid #232D42; border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }"
@@ -30,7 +30,7 @@ def inject_custom_css():
 
 inject_custom_css()
 
-# 헤더 영역
+# 헤더 영역 (이제 해당 제목이 붉은색 스타일로 나타납니다)
 st.markdown('<div class="main-title">⚠️ 우리가 도박의 늪에 빠지면 안 되는 이유</div>', unsafe_allow_html=True)
 desc_text = (
     "본 프로젝트는 단순한 게임을 넘어 일상을 파괴하는 청소년 도박의 치명적인 심각성을 인지하고, "
@@ -149,7 +149,7 @@ plt.rcParams.update({
 
 # --- 첫 번째 그래프 행 (선형 회귀 그래프만 단독 배치) ---
 st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
-fig1, ax1 = plt.subplots(figsize=(14, 4)) # 와이드 레이아웃에 맞게 가로 폭 확장
+fig1, ax1 = plt.subplots(figsize=(14, 4))
 fig1.patch.set_facecolor('#0E1117')
 ax1.set_facecolor('#111625')
 

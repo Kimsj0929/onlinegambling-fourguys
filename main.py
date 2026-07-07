@@ -7,17 +7,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 사이드바 내비게이션 설정
-st.sidebar.title("🧭 내비게이션")
-st.sidebar.caption("분석 단계를 선택하세요")
-st.sidebar.radio(
-    "Menu",
-    ["홈 (Home)", "문제 정의 (Problem)", "데이터 전처리 (Preprocess)", "데이터 시각화 (Visualize)", "모델링 및 예측 (Modeling)"],
-    label_visibility="collapsed",
-)
-
 # 메인 타이틀
-st.title("🚨청소년이 도박은 왜 문제일까? ")
+st.title("🚨 청소년이 도박은 왜 문제일까?")
 st.markdown(
     """
     본 프로젝트는 청소년 도박의 심각성과 그 파괴적인 실태를 인지하고, 실태조사 데이터를 바탕으로 도박 위험군을 조기에 예측 및 분류하기 위한 

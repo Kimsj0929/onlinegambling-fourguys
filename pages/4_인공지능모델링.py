@@ -39,7 +39,7 @@ desc_text = (
     "데이터가 증명하는 진실을 마주해 보세요. 좌측 사이드바의 메뉴를 통해 데이터 정제부터 모델링까지, "
     "도박이 우리 삶을 잠식해 가는 전 과정을 과학적으로 확인할 수 있습니다."
 )
-st.markdown('<div class="sub-title">' + desc_text + '</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="sub-title">{desc_text}</div>', unsafe_allow_html=True)
 
 # 2. 데이터 세트 자립형 생성 엔진
 @st.cache_data
@@ -94,66 +94,37 @@ val_acc_log = f"{acc_log * 100:.1f}"
 val_rf_prob = f"{pred_rf_prob * 100:.2f}"
 val_acc_rf = f"{acc_rf * 100:.1f}"
 
-# 매직 파서 우회를 위해 미리 문자열 결합 처리
-str_lin_mae = "Model Error (MAE): " + val_mae
-str_log_acc = "Model Accuracy: " + val_acc_log + "%"
-str_log_prob = val_log_prob + "%"
-str_rf_acc = "Model Accuracy: " + val_acc_rf + "%"
-str_rf_prob = val_rf_prob + "%"
+str_lin_mae = f"Model Error (MAE): {val_mae}"
+str_log_acc = f"Model Accuracy: {val_acc_log}%"
+str_log_prob = f"{val_log_prob}%"
+str_rf_acc = f"Model Accuracy: {val_acc_rf}%"
+str_rf_prob = f"{val_rf_prob}%"
 
+# [수정 반영] 컴파일러 충돌 방지를 위해 멀티라인 HTML 문자열을 안정적인 f-string 단일 블록으로 치환
 with p_col1:
-    html_lin = (
-        '<div class="metric-card">'
-        '<div class="metric-label">Linear Regression Output</div>'
-        '<div class="metric-value" style="color: #FF2E93;">' + val_lin + '</div>'
-        '<div class="sub-value" style="color: #FF8DA1;">' + str_lin_mae + '</div>'
-        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 연속 수치 예측 결과값; 상하한선 경계가 없음.</div>'
-        '</div>'
-    )
+    html_lin = f"""
+    <div class="metric-card">
+        <div class="metric-label">Linear Regression Output</div>
+        <div class="metric-value" style="color: #FF2E93;">{val_lin}</div>
+        <div class="sub-value" style="color: #FF8DA1;">{str_lin_mae}</div>
+        <div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 연속 수치 예측 결과값; 상하한선 경계가 없음.</div>
+    </div>
+    """
     st.markdown(html_lin, unsafe_allow_html=True)
 
 with p_col2:
-    html_log = (
-        '<div class="metric-card">'
-        '<div class="metric-label">Logistic Regression Probability</div>'
-        '<div class="metric-value" style="color: #00E5FF;">' + str_log_prob + '</div>'
-        '<div class="sub-value" style="color: #80F2FF;">' + str_log_acc + '</div>'
-        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 통계적 시그모이드 기반 위험 확률 추정값.</div>'
-        '</div>'
-    )
+    html_log = f"""
+    <div class="metric-card">
+        <div class="metric-label">Logistic Regression Probability</div>
+        <div class="metric-value" style="color: #00E5FF;">{str_log_prob}</div>
+        <div class="sub-value" style="color: #80F2FF;">{str_log_acc}</div>
+        <div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 통계적 시그모이드 기반 위험 확률 추정값.</div>
+    </div>
+    """
     st.markdown(html_log, unsafe_allow_html=True)
 
 with p_col3:
-    html_rf = (
-        '<div class="metric-card">'
-        '<div class="metric-label">Random Forest Probability</div>'
-        '<div class="metric-value" style="color: #FFD700;">' + str_rf_prob + '</div>'
-        '<div class="sub-value" style="color: #FFE680;">' + str_rf_acc + '</div>'
-        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 머신러닝 의사결정나무 앙상블 기반 위험 확률 추정값.</div>'
-        '</div>'
-    )
-    st.markdown(html_rf, unsafe_allow_html=True)
-
-# ==================== AI 시각화 그래픽스 엔진 ====================
-X_range = np.linspace(min_x, max_x, 500).reshape(-1, 1)
-
-plt.style.use('dark_background')
-plt.rcParams.update({
-    'font.family': 'sans-serif',
-    'font.sans-serif': ['DejaVu Sans', 'Arial', 'Helvetica', 'Liberation Sans'],
-    'text.color': '#8A99AD', 
-    'axes.labelcolor': '#8A99AD',
-    'xtick.color': '#4A5568',
-    'ytick.color': '#4A5568'
-})
-
-# --- 첫 번째 행: 선형 회귀와 로지스틱 회귀 그래프를 좌우로 나란히 배치 ---
-col_g1, col_g2 = st.columns(2)
-
-with col_g1:
-    st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
-    fig1, ax1 = plt.subplots(figsize=(7, 3.8))
-    fig1.patch.set_facecolor('#0E1117')
-    ax1.set_facecolor('#111625')
-    
-    ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6,
+    html_rf = f"""
+    <div class="metric-card">
+        <div class="metric-label">Random Forest Probability</div>
+        <div class="metric-value" style="color: #FF

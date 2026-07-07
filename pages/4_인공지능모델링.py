@@ -63,7 +63,7 @@ lin_model = LinearRegression().fit(X_train, y_train)
 log_model = LogisticRegression().fit(X_train, y_train)
 rf_model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42).fit(X_train, y_train)
 
-# 평가지표 산출 (MAE 적용)
+# 평가지표 산출 (MAE 오차지표 적용)
 mae = mean_absolute_error(y_test, lin_model.predict(X_test))
 acc_log = accuracy_score(y_test, log_model.predict(X_test))
 acc_rf = accuracy_score(y_test, rf_model.predict(X_test))
@@ -85,7 +85,6 @@ pred_rf_prob = rf_model.predict_proba([[user_val]])[0][1]
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ==================== 세 파트로 분리된 스코어 및 평가지표 메트릭 ====================
-# [수정 포인트] 잘려있던 변수 선언 부분을 정상적으로 3개의 컬럼으로 매칭시켰습니다.
 p_col1, p_col2, p_col3 = st.columns(3)
 
 val_lin = f"{pred_lin:.4f}"
@@ -119,4 +118,42 @@ with p_col2:
         '<div class="metric-label">Logistic Regression Probability</div>'
         '<div class="metric-value" style="color: #00E5FF;">' + str_log_prob + '</div>'
         '<div class="sub-value" style="color: #80F2FF;">' + str_log_acc + '</div>'
-        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">
+        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 통계적 시그모이드 기반 위험 확률 추정값.</div>'
+        '</div>'
+    )
+    st.markdown(html_log, unsafe_allow_html=True)
+
+with p_col3:
+    html_rf = (
+        '<div class="metric-card">'
+        '<div class="metric-label">Random Forest Probability</div>'
+        '<div class="metric-value" style="color: #FFD700;">' + str_rf_prob + '</div>'
+        '<div class="sub-value" style="color: #FFE680;">' + str_rf_acc + '</div>'
+        '<div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 머신러닝 의사결정나무 앙상블 기반 위험 확률 추정값.</div>'
+        '</div>'
+    )
+    st.markdown(html_rf, unsafe_allow_html=True)
+
+# ==================== AI 시각화 그래픽스 엔진 ====================
+X_range = np.linspace(min_x, max_x, 500).reshape(-1, 1)
+
+plt.style.use('dark_background')
+plt.rcParams.update({
+    'font.family': 'sans-serif',
+    'font.sans-serif': ['DejaVu Sans', 'Arial', 'Helvetica', 'Liberation Sans'],
+    'text.color': '#8A99AD', 
+    'axes.labelcolor': '#8A99AD',
+    'xtick.color': '#4A5568',
+    'ytick.color': '#4A5568'
+})
+
+# --- 첫 번째 행: 선형 회귀와 로지스틱 회귀 그래프를 좌우로 나란히 배치 ---
+col_g1, col_g2 = st.columns(2)
+
+with col_g1:
+    st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
+    fig1, ax1 = plt.subplots(figsize=(7, 3.8))
+    fig1.patch.set_facecolor('#0E1117')
+    ax1.set_facecolor('#111625')
+    
+    ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6,

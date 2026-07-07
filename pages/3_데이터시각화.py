@@ -39,16 +39,17 @@ def load_raw_data():
         money = np.random.uniform(50, 500, n)
         
         # 양의 상관관계 시나리오 (Money가 커질수록 Outpay도 커짐)
-        base_outpay = money * 0.85 
+        # 배율을 높이고 노이즈를 줄여 대각선 모양을 더 명확하게 만듦
+        base_outpay = money * 2.5 
         
         # 현실감을 위한 노이즈(변동성) 추가
-        noise = np.random.normal(0, 40, n)
+        noise = np.random.normal(0, 100, n)
         outpay = base_outpay + noise
         
         # 이상치(Outliers) 강제 주입 - IQR 필터 슬라이더의 작동을 극적으로 보여주기 위함
-        outpay[12] = 2200   # 거대한 양의 이상치
-        outpay[85] = -600   # 거대한 음의 이상치
-        outpay[150] = 1800  # 추가 이상치
+        outpay[12] = 4000   # 거대한 양의 이상치
+        outpay[85] = -1000   # 거대한 음의 이상치
+        outpay[150] = 3500  # 추가 이상치
         
         return pd.DataFrame({
             'gamers': np.random.randint(40, 220, n),
@@ -194,8 +195,9 @@ with s_col1:
     
     # [핵심] Y축 범위를 정제 완료 데이터 기준으로 자동 한계 제어하여 우상향 경향성을 극대화함
     if not df_clean.empty:
-        y_min = df_clean['outpay'].min() - 50
-        y_max = df_clean['outpay'].max() + 50
+        # 데이터의 실제 범위에 맞춰 Y축 범위를 설정
+        y_min = df_clean['outpay'].min() - 100
+        y_max = df_clean['outpay'].max() + 100
         ax_s.set_ylim(y_min, y_max)
     
     ax_s.set_xlabel('Money')

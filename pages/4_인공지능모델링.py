@@ -232,34 +232,34 @@ with col_g4:
     st.pyplot(fig4)
     plt.close(fig4)
 
-# ==================== 요약 성능 리포트 ====================
+# ==================== 요약 성능 리포트 (한국어 패치 적용) ====================
 st.markdown("<br>", unsafe_allow_html=True)
-st.markdown("### ⚖️ 모델 종합 성능 리포트 요약")
+st.markdown("### ⚖️ AI 모델별 종합 성능 검증 리포트")
 
-score_lin = "MSE: " + val_mse
-score_log = "Accuracy: " + val_acc_log + "%"
-score_rf = "Accuracy: " + val_acc_rf + "%"
+score_lin = "평균제곱오차(MSE): " + val_mse
+score_log = "분류 정확도(Accuracy): " + val_acc_log + "%"
+score_rf = "분류 정확도(Accuracy): " + val_acc_rf + "%"
 
 summary_matrix = pd.DataFrame({
-    "Evaluation Metric": ["Optimization Objective", "Output Data Space", "Binary Classification Fit", "Model Performance Score"],
-    "Model 01: Linear Regression": [
-        "Minimize Continuous Error",
-        "Unbounded (-inf to +inf)",
-        "Unsuitable (Mathematical Distortion)",
+    "평가 및 성능 지표": ["모델 최적화 목표", "출력 데이터 형태", "도박 위험군 분류 적합성", "종합 검증 성능 점수"],
+    "모델 01: 선형 회귀 (Linear)": [
+        "연속 수치 오차 최소화",
+        "제한 없음 (음수 ~ 무한대 수치)",
+        "부적합 (이진 분류 시 수치 왜곡 발생)",
         score_lin
     ],
-    "Model 02: Logistic Regression": [
-        "Maximize Log-Likelihood",
-        "Bounded (Sigmoid Space: 0 to 1)",
-        "Highly Optimal",
+    "모델 02: 로지스틱 회귀 (Logistic)": [
+        "로그 우도(Log-Likelihood) 최대화",
+        "확률값 제한 (시그모이드 공간: 0 ~ 1)",
+        "매우 우수 (위험군 발생 확률 추정에 최적)",
         score_log
     ],
-    "Model 03: Random Forest": [
-        "Maximize Information Gain (Gini)",
-        "Discrete Ensemble Probability (0 to 1)",
-        "Excellent (Captures Complex Non-linear Rules)",
+    "모델 03: 랜덤 포레스트 (Random Forest)": [
+        "정보 이득(불순도 지표 감소) 최대화",
+        "다수결 앙상블 이산 확률 (0 ~ 1)",
+        "최상 (복잡한 비선형 규칙 및 중독 패턴 탐지)",
         score_rf
     ]
 })
 
-st.table(summary_matrix.set_index("Evaluation Metric"))
+st.table(summary_matrix.set_index("평가 및 성능 지표"))

@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, accuracy_score
@@ -72,32 +73,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ==================== 두 파트로 분리된 스코어 및 평가지표 메트릭 ====================
 p_col1, p_col2 = st.columns(2)
 
-# 구문 분석 충돌 에러 방지를 위해 메트릭 데이터 결합 가공을 미리 완료
+# 구문 분석 충돌 에러 방지를 위해 메트릭 데이터 가공 사전 처리
 val_lin = f"{pred_lin:.4f}"
 val_mse = f"{mse:.4f}"
-val_prob = f"{pred_log_prob * 100:.2f}"
-val_acc = f"{acc * 100:.1f}"
-
-with p_col1:
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">Linear Regression Output</div>
-        <div class="metric-value" style="color: #FF2E93;">{val_lin}</div>
-        <div class="sub-value" style="color: #FF8DA1;">Model Error (MSE): {val_mse}</div>
-        <div style='color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;'>* Predicts continuous numerical points; evaluated via Mean Squared Error (closer to 0 is better).</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with p_col2:
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">Logistic Regression Probability</div>
-        <div class="metric-value" style="color: #00E5FF;">{val_prob}%</div>
-        <div class="sub-value" style="color: #80F2FF;">Model Accuracy: {val_acc}%</div>
-        <div style='color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;'>* Classifies success probability; evaluated via Accuracy Score (closer to 100% is better).</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ==================== AI 시각화 그래픽스 엔진 ====================
-col_g1, col_g2 = st.columns(2)
-X_range = np.linspace(min_x, max_x, 500).reshape(-1, 1)
+val_prob = f"{pred_log_prob * 10

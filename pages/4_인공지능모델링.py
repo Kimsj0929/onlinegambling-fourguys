@@ -54,4 +54,118 @@ log_model = LogisticRegression().fit(X_train, y_train)
 
 # 평가지표 산출 (선형 MSE / 로지스틱 Accuracy)
 mse = mean_squared_error(y_test, lin_model.predict(X_test))
-acc = accuracy_score(y_test, log_model.predict(X_
+acc = accuracy_score(y_test, log_model.predict(X_test))
+
+# ==================== 실시간 예측 컨트롤러 ====================
+st.markdown('<div class="section-header">Hyperparameter Real-time Control Console</div>', unsafe_allow_html=True)
+min_x, max_x = float(X.min()), float(X.max())
+
+user_val = st.slider("Input Parameter Control: Money (Betting Amount)", min_x, max_x, float(X.mean()), step=0.1)
+
+# 실시간 분석 추론 연산
+pred_lin = lin_model.predict([[user_val]])[0]
+pred_log_prob = log_model.predict_proba([[user_val]])[0][1]
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ==================== 두 파트로 분리된 스코어 및 평가지표 메트릭 ====================
+p_col1, p_col2 = st.columns(2)
+
+with p_col1:
+    val_lin = f"{pred_lin:.4f}"
+    val_mse = f"{mse:.4f}"
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-label">Linear Regression Output</div>
+        <div class="metric-value" style="color: #FF2E93;">{val_lin}</div>
+        <div class="sub-value" style="color: #FF8DA1;">Model Error (MSE): {val_mse}</div>
+        <div style='color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;'>* Predicts continuous numerical points; evaluated via Mean Squared Error (closer to 0 is better).</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with p_col2:
+    val_prob = f"{pred_log_prob * 100:.2f}"
+    val_acc = f"{acc * 100:.1f}"
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-label">Logistic Regression Probability</div>
+        <div class="metric-value" style="color: #00E5FF;">{val_prob}%</div>
+        <div class="sub-value" style="color: #80F2FF;">Model Accuracy: {val_acc}%</div>
+        <div style='color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;'>* Classifies success probability; evaluated via Accuracy Score (closer to 100% is better).</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==================== AI 시각화 그래픽스 엔진 ====================
+col_g1, col_g2 = st.columns(2)
+X_range = np.linspace(min_x, max_x, 500).reshape(-1, 1)
+
+plt.style.use('dark_background')
+plt.rcParams.update({
+    'text.color': '#8A99AD', 
+    'axes.labelcolor': '#8A99AD',
+    'xtick.color': '#4A5568',
+    'ytick.color': '#4A5568'
+})
+
+# --- 좌측 파트: 선형 회귀 추세선 그래프 ---
+with col_g1:
+    st.markdown("#### 📉 Linear Regression Model Prediction Line")
+    fig1, ax1 = plt.subplots(figsize=(7, 4.2))
+    fig1.patch.set_facecolor('#0E1117')
+    ax1.set_facecolor('#111625')
+    
+    ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
+    ax1.plot(X_range, lin_model.predict(X_range), color='#FF2E93', linewidth=2.5, label='Linear Trend Line', zorder=3)
+    ax1.scatter(user_val, pred_lin, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Input')
+    ax1.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
+    
+    ax1.set_xlabel('Money')
+    ax1.set_ylabel('Predicted Value')
+    ax1.set_ylim(-0.3, 1.3)
+    ax1.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
+    ax1.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
+    st.pyplot(fig1)
+    plt.close(fig1)
+
+# --- 우측 파트: 로지스틱 시그모이드 곡선 그래프 ---
+with col_g2:
+    st.markdown("#### 📈 Logistic Regression Sigmoid Curve")
+    fig2, ax2 = plt.subplots(figsize=(7, 4.2))
+    fig2.patch.set_facecolor('#0E1117')
+    ax2.set_facecolor('#111625')
+    
+    ax2.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
+    ax2.plot(X_range, log_model.predict_proba(X_range)[:, 1], color='#00E5FF', linewidth=2.5, label='Sigmoid Curve', zorder=3)
+    ax2.axhline(0.5, color='#718096', linestyle='--', linewidth=1, alpha=0.6, label='Decision Boundary (0.5)')
+    ax2.scatter(user_val, pred_log_prob, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Input')
+    ax2.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
+    
+    ax2.set_xlabel('Money')
+    ax2.set_ylabel('Probability')
+    ax2.set_ylim(-0.1, 1.1)
+    ax2.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
+    ax2.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
+    st.pyplot(fig2)
+    plt.close(fig2)
+
+# ==================== 요약 성능 리포트 ====================
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("### ⚖️ Model Performance & Summary Report")
+
+summary_matrix = pd.DataFrame({
+    "Evaluation Metric": ["Optimization Objective", "Output Data Space", "Binary Classification Fit", "Model Performance Score"],
+    "Model 01: Linear Regression": [
+        "Minimize Continuous Error",
+        "Unbounded (-inf to +inf)",
+        "Unsuitable (Mathematical Distortion)",
+        f"MSE: {val_mse}"
+    ],
+    "Model 02: Logistic Regression": [
+        "Maximize Log-Likelihood",
+        "Bounded (Sigmoid Space: 0 to 1)",
+        "Highly Optimal",
+        f"Accuracy: {val_acc}%"
+    ]
+})
+
+st.table(summary_matrix.set_index("Evaluation Metric"))

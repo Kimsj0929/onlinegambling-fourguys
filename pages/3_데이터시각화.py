@@ -39,7 +39,6 @@ def load_raw_data():
         money = np.random.uniform(50, 500, n)
         
         # 양의 상관관계 시나리오 (Money가 커질수록 Outpay도 커짐)
-        # 배율을 높이고 노이즈를 줄여 대각선 모양을 더 명확하게 만듦
         base_outpay = money * 2.5 
         
         # 현실감을 위한 노이즈(변동성) 추가
@@ -177,7 +176,7 @@ with b_col2:
 
 st.markdown("---")
 
-# ==================== GRAPH 3. 산점도 및 바 차트 (산점도 수정본 적용) ====================
+# ==================== GRAPH 3. 산점도 및 바 차트 ====================
 st.markdown("#### 🎯 3. 데이터 분포 형태 및 등급별 평균 환급 구조")
 s_col1, s_col2 = st.columns(2)
 
@@ -193,12 +192,16 @@ with s_col1:
     # 2. 정제 데이터 (정상 구역에 모여있는 선명한 녹색 점)
     ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.9, label='Cleaned', s=25)
     
-    # [핵심] Y축 범위를 정제 완료 데이터 기준으로 자동 한계 제어하여 우상향 경향성을 극대화함
+    # [★ 핵심 수정 사항] X축과 Y축 모두 정제 데이터 기준으로 화면을 고정(Zoom-in)합니다.
     if not df_clean.empty:
-        # 데이터의 실제 범위에 맞춰 Y축 범위를 설정
-        y_min = df_clean['outpay'].min() - 100
-        y_max = df_clean['outpay'].max() + 100
-        ax_s.set_ylim(y_min, y_max)
+        # 약간의 여백(Padding)을 주어 그래프가 테두리에 딱 붙지 않게 조절합니다.
+        x_margin = (df_clean['money'].max() - df_clean['money'].min()) * 0.05
+        y_margin = (df_clean['outpay'].max() - df_clean['outpay'].min()) * 0.05
+        
+        # 가로축(X축) 범위 제한 -> 녹색 점들이 화면 전체로 확장됨
+        ax_s.set_xlim(df_clean['money'].min() - x_margin, df_clean['money'].max() + x_margin)
+        # 세로축(Y축) 범위 제한
+        ax_s.set_ylim(df_clean['outpay'].min() - y_margin, df_clean['outpay'].max() + y_margin)
     
     ax_s.set_xlabel('Money')
     ax_s.set_ylabel('Outpay')
@@ -217,7 +220,7 @@ with s_col2:
     df_raw_bar['group'] = pd.qcut(df_raw_bar['money'], q=3, labels=group_labels)
     
     try:
-        df_clean_bar['group'] = pd.qcut(df_clean_bar['money'], q=3, labels=group_labels)
+        df_clean_bar['group'] = pd.qcut(df_clean_bar['group'], q=3, labels=group_labels)
     except:
         df_clean_bar['group'] = pd.cut(df_clean_bar['money'], bins=3, labels=group_labels)
     

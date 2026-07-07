@@ -8,29 +8,26 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, accuracy_score
 
-# 1. 글로벌 레이아웃 설정
 st.set_page_config(page_title="NEXUS Quantum AI Modeling", layout="wide")
 
-# CSS 주입 (메인 타이틀 색상을 어두운 블랙/차콜 계열로 설정)
 def inject_custom_css():
-    css_content = (
-        "<style>"
-        "@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');"
-        "html, body, [data-testid='stMarkdownContainer'] { font-family: 'Noto Sans KR', sans-serif; }"
-        ".main-title { font-size: 2.2rem; font-weight: 700; color: #111625; margin-bottom: 0.5rem; }"
-        ".sub-title { font-size: 1rem; color: #8A99AD; margin-bottom: 2rem; }"
-        ".section-header { margin-top: 1rem; margin-bottom: 1.5rem; color: #00E5FF; font-weight: 700; border-left: 5px solid #FF2E93; padding-left: 1rem; }"
-        ".metric-card { background-color: #111625; border: 1px solid #232D42; border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }"
-        ".metric-label { font-size: 0.8rem; color: #6C7D93; font-weight: 700; text-transform: uppercase; }"
-        ".metric-value { font-size: 1.8rem; color: #FFFFFF; font-family: 'JetBrains Mono', monospace; }"
-        ".sub-value { font-size: 1.1rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; margin-top: 0.2rem; }"
-        "</style>"
-    )
+    css_content = """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+    html, body, [data-testid="stMarkdownContainer"] { font-family: "Noto Sans KR", sans-serif; }
+    .main-title { font-size: 2.2rem; font-weight: 700; color: #111625; margin-bottom: 0.5rem; }
+    .sub-title { font-size: 1rem; color: #8A99AD; margin-bottom: 2rem; }
+    .section-header { margin-top: 1rem; margin-bottom: 1.5rem; color: #00E5FF; font-weight: 700; border-left: 5px solid #FF2E93; padding-left: 1rem; }
+    .metric-card { background-color: #111625; border: 1px solid #232D42; border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }
+    .metric-label { font-size: 0.8rem; color: #6C7D93; font-weight: 700; text-transform: uppercase; }
+    .metric-value { font-size: 1.8rem; color: #FFFFFF; font-family: "JetBrains Mono", monospace; }
+    .sub-value { font-size: 1.1rem; font-family: "JetBrains Mono", monospace; font-weight: 700; margin-top: 0.2rem; }
+    </style>
+    """
     st.markdown(css_content, unsafe_allow_html=True)
 
 inject_custom_css()
 
-# 헤더 영역
 st.markdown('<div class="main-title">⚠️ 우리가 도박의 늪에 빠지면 안 되는 이유</div>', unsafe_allow_html=True)
 desc_text = (
     "본 프로젝트는 단순한 게임을 넘어 일상을 파괴하는 청소년 도박의 치명적인 심각성을 인지하고, "
@@ -41,7 +38,6 @@ desc_text = (
 )
 st.markdown(f'<div class="sub-title">{desc_text}</div>', unsafe_allow_html=True)
 
-# 2. 데이터 세트 자립형 생성 엔진
 @st.cache_data
 def load_analysis_data():
     np.random.seed(42)
@@ -50,41 +46,35 @@ def load_analysis_data():
     logit = (X_mock - 275) / 40
     prob = 1 / (1 + np.exp(-logit))
     y_mock = np.random.binomial(1, prob)
-    return pd.DataFrame({'money': X_mock, 'target': y_mock})
+    return pd.DataFrame({"money": X_mock, "target": y_mock})
 
 df = load_analysis_data()
-X = df[['money']].values
-y = df['target'].values
+X = df[["money"]].values
+y = df["target"].values
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 모델 생성 및 훈련
 lin_model = LinearRegression().fit(X_train, y_train)
 log_model = LogisticRegression().fit(X_train, y_train)
 rf_model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42).fit(X_train, y_train)
 
-# 평가지표 산출 (MAE 오차지표 적용)
 mae = mean_absolute_error(y_test, lin_model.predict(X_test))
 acc_log = accuracy_score(y_test, log_model.predict(X_test))
 acc_rf = accuracy_score(y_test, rf_model.predict(X_test))
 
-# ==================== 실시간 예측 컨트롤러 ====================
 st.markdown('<div class="section-header">🕹️ 하이퍼파라미터 실시간 제어 콘솔</div>', unsafe_allow_html=True)
 min_x = float(X.min())
 max_x = float(X.max())
 mean_x = float(X.mean())
 
-# 컨트롤 슬라이더
 user_val = st.slider("입력 데이터 제어 범위 설정: Money (Betting Amount)", min_x, max_x, mean_x, step=0.1)
 
-# 실시간 분석 추론 연산
 pred_lin = lin_model.predict([[user_val]])[0]
 pred_log_prob = log_model.predict_proba([[user_val]])[0][1]
 pred_rf_prob = rf_model.predict_proba([[user_val]])[0][1]
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ==================== 세 파트로 분리된 스코어 및 평가지표 메트릭 ====================
 p_col1, p_col2, p_col3 = st.columns(3)
 
 val_lin = f"{pred_lin:.4f}"
@@ -100,7 +90,6 @@ str_log_prob = f"{val_log_prob}%"
 str_rf_acc = f"Model Accuracy: {val_acc_rf}%"
 str_rf_prob = f"{val_rf_prob}%"
 
-# [수정 반영] 컴파일러 충돌 방지를 위해 멀티라인 HTML 문자열을 안정적인 f-string 단일 블록으로 치환
 with p_col1:
     html_lin = f"""
     <div class="metric-card">
@@ -127,4 +116,44 @@ with p_col3:
     html_rf = f"""
     <div class="metric-card">
         <div class="metric-label">Random Forest Probability</div>
-        <div class="metric-value" style="color: #FF
+        <div class="metric-value" style="color: #FFD700;">{str_rf_prob}</div>
+        <div class="sub-value" style="color: #FFE680;">{str_rf_acc}</div>
+        <div style="color:#6C7D93; font-size:0.75rem; margin-top:0.4rem;">* 머신러닝 의사결정나무 앙상블 기반 위험 확률 추정값.</div>
+    </div>
+    """
+    st.markdown(html_rf, unsafe_allow_html=True)
+
+X_range = np.linspace(min_x, max_x, 500).reshape(-1, 1)
+
+plt.style.use("dark_background")
+plt.rcParams.update({
+    "font.family": "sans-serif",
+    "font.sans-serif": ["DejaVu Sans", "Arial", "Helvetica", "Liberation Sans"],
+    "text.color": "#8A99AD", 
+    "axes.labelcolor": "#8A99AD",
+    "xtick.color": "#4A5568",
+    "ytick.color": "#4A5568"
+})
+
+col_g1, col_g2 = st.columns(2)
+
+with col_g1:
+    st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
+    fig1, ax1 = plt.subplots(figsize=(7, 3.8))
+    fig1.patch.set_facecolor("#0E1117")
+    ax1.set_facecolor("#111625")
+    
+    ax1.scatter(X_test, y_test, color="#2D3748", alpha=0.6, s=25, label="Validation Data", zorder=2)
+    ax1.plot(X_range, lin_model.predict(X_range), color="#FF2E93", linewidth=2.5, label="Linear Trend Line", zorder=3)
+    ax1.scatter(user_val, pred_lin, color="#FFD700", edgecolor="#FFFFFF", s=160, marker="o", zorder=5, label="Real-time Input")
+    ax1.axvline(user_val, color="#4A5568", linestyle=":", alpha=0.5, zorder=1)
+    
+    ax1.set_xlabel("Money")
+    ax1.set_ylabel("Predicted Value")
+    ax1.set_ylim(-0.3, 1.3)
+    ax1.grid(True, color="#1A202C", linestyle="--", linewidth=0.8)
+    ax1.legend(facecolor="#111625", edgecolor="#232D42", loc="upper left")
+    st.pyplot(fig1)
+    plt.close(fig1)
+
+with

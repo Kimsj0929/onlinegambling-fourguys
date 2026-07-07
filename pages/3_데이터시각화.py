@@ -26,7 +26,7 @@ plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['text.color'] = '#8A99AD'
 plt.rcParams['axes.labelcolor'] = '#8A99AD'
 
-# 2. 데이터 세트 로드 (실제 업로드 데이터 기반)
+# 2. 데이터 세트 로드 (상관관계가 확실히 나타나도록 데이터 생성 로직 수정)
 @st.cache_data
 def load_raw_data():
     try:
@@ -34,10 +34,26 @@ def load_raw_data():
     except:
         np.random.seed(42)
         n = 300
+        
+        # 기본 독립변수 (베팅 금액)
         money = np.random.uniform(50, 500, n)
-        outpay = money * np.random.choice([1.3, 0.8, 0.05], size=n, p=[0.4, 0.4, 0.2])
-        outpay[12] = 4500
-        outpay[85] = -850
+        
+        # [수정 포인트] 뚜렷한 상관관계를 만들기 위한 선형 연산식 도입
+        # 1) 양의 상관관계 시나리오 (Money가 커질수록 Outpay도 커짐)
+        base_outpay = money * 0.85 
+        
+        # 2) 음의 상관관계 시나리오를 원하시면 아래 한 줄 주석을 해제하고 위 줄을 주석 처리하세요.
+        # base_outpay = 500 - (money * 0.85)
+        
+        # 현실감을 위한 노이즈(변동성) 추가
+        noise = np.random.normal(0, 40, n)
+        outpay = base_outpay + noise
+        
+        # 이상치(Outliers) 강제 주입 - IQR 필터 슬라이더의 작동을 극적으로 보여주기 위함
+        outpay[12] = 2200   # 거대한 양의 이상치
+        outpay[85] = -600   # 거대한 음의 이상치
+        outpay[150] = 1800  # 추가 이상치
+        
         return pd.DataFrame({
             'gamers': np.random.randint(40, 220, n),
             'skins': np.random.randint(90, 320, n),
@@ -171,7 +187,9 @@ with s_col1:
     fig_s.patch.set_facecolor('#0E1117')
     ax_s.set_facecolor('#111625')
     
-    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.3, label='Outliers', s=35)
+    # 원본 데이터(이상치 포함) 플롯
+    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.4, label='Outliers', s=35)
+    # 정제 데이터 플롯
     ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.8, label='Cleaned', s=20)
     
     plt.sca(ax_s)
@@ -185,30 +203,3 @@ with s_col2:
     st.markdown("##### 📊 규모별 평균 환급 비교")
     
     df_raw_bar = df_raw.copy()
-    df_clean_bar = df_clean.copy()
-    
-    group_labels = ['Low', 'Medium', 'High']
-    df_raw_bar['group'] = pd.qcut(df_raw_bar['money'], q=3, labels=group_labels)
-    
-    try:
-        df_clean_bar['group'] = pd.qcut(df_clean_bar['money'], q=3, labels=group_labels)
-    except:
-        df_clean_bar['group'] = pd.cut(df_clean_bar['money'], bins=3, labels=group_labels)
-    
-    raw_mean = df_raw_bar.groupby('group', observed=False)['outpay'].mean()
-    clean_mean = df_clean_bar.groupby('group', observed=False)['outpay'].mean()
-    
-    bar_df = pd.DataFrame({'Raw Mean': raw_mean, 'Clean Mean': clean_mean})
-    
-    fig_bar, ax_bar = plt.subplots(figsize=(6, 4.2))
-    fig_bar.patch.set_facecolor('#0E1117')
-    ax_bar.set_facecolor('#111625')
-    
-    bar_df.plot(kind='bar', color=['#4A5568', '#00E5FF'], ax=ax_bar, rot=0)
-    
-    plt.sca(ax_bar)
-    plt.xlabel('Betting Groups')
-    plt.ylabel('Average Outpay')
-    ax_bar.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
-    ax_bar.legend(facecolor='#111625', edgecolor='#232D42')
-    st.pyplot(fig_bar)

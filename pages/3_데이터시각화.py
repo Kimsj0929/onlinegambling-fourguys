@@ -39,16 +39,16 @@ def load_raw_data():
         money = np.random.uniform(50, 500, n)
         
         # 양의 상관관계 시나리오 (Money가 커질수록 Outpay도 커짐)
-        base_outpay = money * 2.5 
+        base_outpay = money * 0.85 
         
         # 현실감을 위한 노이즈(변동성) 추가
-        noise = np.random.normal(0, 100, n)
+        noise = np.random.normal(0, 40, n)
         outpay = base_outpay + noise
         
         # 이상치(Outliers) 강제 주입 - IQR 필터 슬라이더의 작동을 극적으로 보여주기 위함
-        outpay[12] = 4000   # 거대한 양의 이상치
-        outpay[85] = -1000   # 거대한 음의 이상치
-        outpay[150] = 3500  # 추가 이상치
+        outpay[12] = 2200   # 거대한 양의 이상치
+        outpay[85] = -600   # 거대한 음의 이상치
+        outpay[150] = 1800  # 추가 이상치
         
         return pd.DataFrame({
             'gamers': np.random.randint(40, 220, n),
@@ -141,7 +141,7 @@ with h_col2:
 
 st.markdown("---")
 
-# ==================== GRAPH 2. 분포 박스플롯 ====================
+# ==================== GRAPH 2. 분포 박스플롯 (수정 완료) ====================
 st.markdown("#### 📦 2. 주요 데이터 수치 범위 분포")
 b_col1, b_col2 = st.columns(2)
 box_features = ['money', 'outpay']
@@ -152,8 +152,10 @@ with b_col1:
     fig_b1.patch.set_facecolor('#0E1117')
     ax_b1.set_facecolor('#111625')
     
+    # 데이터 안정적 매핑을 위해 객체 지향형(ax=ax_b1)으로 변경 및 명시적 컬럼 전달
     sns.boxplot(data=df_raw[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b1)
     
+    # plt.sca 방식을 배제하고 ax 객체를 직접 제어하여 렌더링 오류 방지
     ax_b1.set_xticklabels(['Money', 'Outpay'])
     ax_b1.set_ylabel("Value Range")
     ax_b1.grid(True, color='#1A202C', linestyle=':', linewidth=0.6)
@@ -166,6 +168,7 @@ with b_col2:
     fig_b2.patch.set_facecolor('#0E1117')
     ax_b2.set_facecolor('#111625')
     
+    # 정제 데이터 박스플롯 생성
     sns.boxplot(data=df_clean[box_features], palette=['#FF2E93', '#00E5FF'], ax=ax_b2)
     
     ax_b2.set_xticklabels(['Money', 'Outpay'])
@@ -186,22 +189,8 @@ with s_col1:
     fig_s.patch.set_facecolor('#0E1117')
     ax_s.set_facecolor('#111625')
     
-    # 1. 원본 데이터 (이상치가 넓게 펼쳐진 투명한 붉은 점)
-    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.3, label='Outliers', s=35)
-    
-    # 2. 정제 데이터 (정상 구역에 모여있는 선명한 녹색 점)
-    ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.9, label='Cleaned', s=25)
-    
-    # [★ 핵심 수정 사항] X축과 Y축 모두 정제 데이터 기준으로 화면을 고정(Zoom-in)합니다.
-    if not df_clean.empty:
-        # 약간의 여백(Padding)을 주어 그래프가 테두리에 딱 붙지 않게 조절합니다.
-        x_margin = (df_clean['money'].max() - df_clean['money'].min()) * 0.05
-        y_margin = (df_clean['outpay'].max() - df_clean['outpay'].min()) * 0.05
-        
-        # 가로축(X축) 범위 제한 -> 녹색 점들이 화면 전체로 확장됨
-        ax_s.set_xlim(df_clean['money'].min() - x_margin, df_clean['money'].max() + x_margin)
-        # 세로축(Y축) 범위 제한
-        ax_s.set_ylim(df_clean['outpay'].min() - y_margin, df_clean['outpay'].max() + y_margin)
+    ax_s.scatter(df_raw['money'], df_raw['outpay'], color='#FF5252', alpha=0.4, label='Outliers', s=35)
+    ax_s.scatter(df_clean['money'], df_clean['outpay'], color='#00E676', alpha=0.8, label='Cleaned', s=20)
     
     ax_s.set_xlabel('Money')
     ax_s.set_ylabel('Outpay')
@@ -220,7 +209,7 @@ with s_col2:
     df_raw_bar['group'] = pd.qcut(df_raw_bar['money'], q=3, labels=group_labels)
     
     try:
-        df_clean_bar['group'] = pd.qcut(df_clean_bar['group'], q=3, labels=group_labels)
+        df_clean_bar['group'] = pd.qcut(df_clean_bar['money'], q=3, labels=group_labels)
     except:
         df_clean_bar['group'] = pd.cut(df_clean_bar['money'], bins=3, labels=group_labels)
     

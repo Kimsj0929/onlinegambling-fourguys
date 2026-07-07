@@ -147,116 +147,33 @@ plt.rcParams.update({
     'ytick.color': '#4A5568'
 })
 
-# --- 첫 번째 그래프 행 (선형 회귀 그래프 단독 배치) ---
-st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
-fig1, ax1 = plt.subplots(figsize=(14, 3.5))
-fig1.patch.set_facecolor('#0E1117')
-ax1.set_facecolor('#111625')
+# --- 첫 번째 행: 선형 회귀와 로지스틱 회귀 그래프를 좌우로 나란히 배치 ---
+col_g1, col_g2 = st.columns(2)
 
-ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
-ax1.plot(X_range, lin_model.predict(X_range), color='#FF2E93', linewidth=2.5, label='Linear Trend Line', zorder=3)
-ax1.scatter(user_val, pred_lin, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Input')
-ax1.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
-
-ax1.set_xlabel('Money')
-ax1.set_ylabel('Predicted Value')
-ax1.set_ylim(-0.3, 1.3)
-ax1.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-ax1.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-st.pyplot(fig1)
-plt.close(fig1)
-
-# --- 두 번째 그래프 행 (새로 추가된 로지스틱 회귀 시그모이드 확률 곡선 그래프) ---
-st.markdown("#### 📈 로지스틱 회귀 시그모이드(Sigmoid) 위험 확률 곡선")
-fig2, ax2 = plt.subplots(figsize=(14, 3.5))
-fig2.patch.set_facecolor('#0E1117')
-ax2.set_facecolor('#111625')
-
-ax2.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
-ax2.plot(X_range, log_model.predict_proba(X_range)[:, 1], color='#00E5FF', linewidth=2.5, label='Logistic Probability Curve', zorder=3)
-ax2.axhline(0.5, color='#718096', linestyle='--', linewidth=1, alpha=0.6, label='Decision Boundary (0.5)')
-ax2.scatter(user_val, pred_log_prob, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Probability')
-ax2.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
-
-ax2.set_xlabel('Money')
-ax2.set_ylabel('Gambling Risk Probability')
-ax2.set_ylim(-0.1, 1.1)
-ax2.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-ax2.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-st.pyplot(fig2)
-plt.close(fig2)
-
-# --- 세 번째 그래프 행 (심층 오차 분석 및 타겟 분포 밀도) ---
-col_g3, col_g4 = st.columns(2)
-
-with col_g3:
-    st.markdown("#### 🔍 선형 예측 오차 분석 (Residuals Scatter Plot)")
-    fig3, ax3 = plt.subplots(figsize=(7, 3.5))
-    fig3.patch.set_facecolor('#0E1117')
-    ax3.set_facecolor('#111625')
+with col_g1:
+    st.markdown("#### 📉 선형 회귀 추세선 모델 예측 결과")
+    fig1, ax1 = plt.subplots(figsize=(7, 3.8))
+    fig1.patch.set_facecolor('#0E1117')
+    ax1.set_facecolor('#111625')
     
-    y_res_pred = lin_model.predict(X_test)
-    residuals = y_test - y_res_pred
+    ax1.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
+    ax1.plot(X_range, lin_model.predict(X_range), color='#FF2E93', linewidth=2.5, label='Linear Trend Line', zorder=3)
+    ax1.scatter(user_val, pred_lin, color='#FFD700', edgecolor='#FFFFFF', s=160, marker='o', zorder=5, label='Real-time Input')
+    ax1.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5, zorder=1)
     
-    ax3.scatter(X_test, residuals, color='#FF2E93', alpha=0.5, s=25, label='Residual Points')
-    ax3.axhline(0, color='#FFFFFF', linestyle='-', linewidth=1, alpha=0.4)
-    ax3.axvline(user_val, color='#4A5568', linestyle=':', alpha=0.5)
+    ax1.set_xlabel('Money')
+    ax1.set_ylabel('Predicted Value')
+    ax1.set_ylim(-0.3, 1.3)
+    ax1.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
+    ax1.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
+    st.pyplot(fig1)
+    plt.close(fig1)
+
+with col_g2:
+    st.markdown("#### 📈 로지스틱 회귀 시그모이드(Sigmoid) 위험 확률 곡선")
+    fig2, ax2 = plt.subplots(figsize=(7, 3.8))
+    fig2.patch.set_facecolor('#0E1117')
+    ax2.set_facecolor('#111625')
     
-    ax3.set_xlabel('Money')
-    ax3.set_ylabel('Residual Error')
-    ax3.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-    ax3.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-    st.pyplot(fig3)
-    plt.close(fig3)
-
-with col_g4:
-    st.markdown("#### 📊 타겟 클래스별 데이터 분포 밀도 (Density Topology Plot)")
-    fig4, ax4 = plt.subplots(figsize=(7, 3.5))
-    fig4.patch.set_facecolor('#0E1117')
-    ax4.set_facecolor('#111625')
-    
-    df_t0 = df[df['target'] == 0]
-    df_t1 = df[df['target'] == 1]
-    
-    sns.kdeplot(data=df_t0, x='money', fill=True, color='#FF2E93', alpha=0.3, label='Target 0', ax=ax4)
-    sns.kdeplot(data=df_t1, x='money', fill=True, color='#00E5FF', alpha=0.3, label='Target 1', ax=ax4)
-    ax4.axvline(user_val, color='#FFD700', linestyle='-', linewidth=1.5, label='User Input Point')
-    
-    ax4.set_xlabel('Money')
-    ax4.set_ylabel('Density')
-    ax4.grid(True, color='#1A202C', linestyle='--', linewidth=0.8)
-    ax4.legend(facecolor='#111625', edgecolor='#232D42', loc='upper left')
-    st.pyplot(fig4)
-    plt.close(fig4)
-
-# ==================== 요약 성능 리포트 ====================
-st.markdown("<br>", unsafe_allow_html=True)
-st.markdown("### ⚖️ 모델 종합 성능 리포트 요약")
-
-score_lin = "MSE: " + val_mse
-score_log = "Accuracy: " + val_acc_log + "%"
-score_rf = "Accuracy: " + val_acc_rf + "%"
-
-summary_matrix = pd.DataFrame({
-    "Evaluation Metric": ["Optimization Objective", "Output Data Space", "Binary Classification Fit", "Model Performance Score"],
-    "Model 01: Linear Regression": [
-        "Minimize Continuous Error",
-        "Unbounded (-inf to +inf)",
-        "Unsuitable (Mathematical Distortion)",
-        score_lin
-    ],
-    "Model 02: Logistic Regression": [
-        "Maximize Log-Likelihood",
-        "Bounded (Sigmoid Space: 0 to 1)",
-        "Highly Optimal",
-        score_log
-    ],
-    "Model 03: Random Forest": [
-        "Maximize Information Gain (Gini)",
-        "Discrete Ensemble Probability (0 to 1)",
-        "Excellent (Captures Complex Non-linear Rules)",
-        score_rf
-    ]
-})
-
-st.table(summary_matrix.set_index("Evaluation Metric"))
+    ax2.scatter(X_test, y_test, color='#2D3748', alpha=0.6, s=25, label='Validation Data', zorder=2)
+    ax2.plot
